@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>EFL mapper</title>
+  <link rel="stylesheet" href="efl.css">
+  <style>
+    body { display: flex; flex-direction: column; height: 100vh; }
+    header {
+      display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+      padding: 8px 12px; border-bottom: 1px solid #ccc; background: #f7f7f7;
+    }
+    header h1 { font-size: 15px; margin: 0 12px 0 0; }
+    button, select { font: inherit; font-size: 13px; padding: 3px 8px; }
+    #status { margin-left: auto; font-size: 13px; color: #444; }
+    #status.error { color: #a00; }
+    main { position: relative; flex: 1; }
+    #findings { max-height: 25vh; overflow: auto; font-size: 13px; border-top: 1px solid #ccc; }
+    #findings:empty { display: none; }
+    #findings div { padding: 3px 12px; cursor: pointer; }
+    #findings div:hover { background: #eef; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>EFL mapper</h1>
+    <button id="open" title="Open an .aml or .json file">Open...</button>
+    <button id="example">Example</button>
+    <button id="save-json">Save JSON</button>
+    <select id="style" title="How flows are written into AML">
+      <option value="link">Flows as links</option>
+      <option value="element">Flows as elements</option>
+    </select>
+    <button id="to-aml">New AML</button>
+    <button id="update" disabled title="Write the diagram back into the opened AML document">Update AML</button>
+    <button id="validate">Check</button>
+    <button id="svg">SVG</button>
+    <span id="status">Ready</span>
+    <input id="file" type="file" accept=".aml,.json" hidden>
+  </header>
+  <main><div id="canvas"></div></main>
+  <div id="findings"></div>
+
+  <script type="module">
+    import { EflModeler } from './efl.esm.js';
+
+    const modeler = new EflModeler({ container: document.getElementById('canvas') });
+    await modeler.createNew();
+    window.efl = { modeler };
+
+    // The document the diagram came from, when it came from AML. Update writes
+    // into exactly this text, which is what keeps the rest of the document.
+    let openedAml = null;
+    let openedHierarchy = null;
+    let openedName = 'diagram';
+
+    const $ = (id) => document.getElementById(id);
+    const status = (text, error = false) => {
+      $('status').textContent = text;
+      $('status').className = error ? 'error' : '';
+    };
+
+    async function call(path, body, contentType) {
+      const response = await fetch(path, { method: 'POST', headers: { 'content-type': contentType }, body });
+      const text = await response.text();
+      if (!response.ok) {
+        let message = text;
+        try { message = JSON.parse(text).error; } catch { /* not JSON */ }
+        throw new Error(message || response.statusText);
+      }
+      const info = response.headers.get('X-Efl-Info');
+      return { text, info: info ? JSON.parse(info) : {} };
+    }
+
+    function download(name, type, text) {
+      const url = URL.createObjectURL(new Blob([text], { type }));
+      const a = Object.assign(document.createElement('a'), { href: url, download: name });
+      document.body.append(a);
+      a.click();
+      a.remove();
+      // Revoked later, not right away: some browsers start the download after
+      // the click handler returns and find the URL gone.
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    }
+
+    async function show(json, what) {
+      const { warnings } = await modeler.importModel(json);
+      status(warnings.length ? `${what}, ${warnings.length} warning(s): ${warnings[0]}` : what, warnings.length > 0);
+    }
+
+    async function guarded(action) {
+      try {
+        await action();
+      } catch (e) {
+        status(e.message, true);
+      }
+    }
+
+    $('open').onclick = () => $('file').click();
+    $('file').onchange = () => guarded(async () => {
+      const file = $('file').files[0];
+      $('file').value = '';
+      if (!file) return;
+      const text = await file.text();
+      openedName = file.name.replace(/\.[^.]+$/, '');
+
+      if (text.includes('CAEXFile')) {
+        const { text: json, info } = await call('api/to-json', text, 'application/xml');
+        openedAml = text;
+        openedHierarchy = info.hierarchy;
+        $('update').disabled = false;
+        await show(json, `Opened '${info.hierarchy}'` + (info.arrangedNodes ? `, ${info.arrangedNodes} node(s) placed` : ''));
+      } else {
+        openedAml = null;
+        $('update').disabled = true;
+        await show(text, `Opened ${file.name}`);
+      }
+    });
+
+    $('example').onclick = () => guarded(async () => {
+      const response = await fetch('examples/bottling-line.json');
+      openedAml = null;
+      $('update').disabled = true;
+      openedName = 'bottling-line';
+      await show(await response.text(), 'Example loaded');
+    });
+
+    $('save-json').onclick = () => guarded(async () =>
+      download(`${openedName}.json`, 'application/json', await modeler.exportModel()));
+
+    $('to-aml').onclick = () => guarded(async () => {
+      const { text } = await call(`api/to-aml?style=${$('style').value}`, await modeler.exportModel(), 'application/json');
+      download(`${openedName}.aml`, 'application/xml', text);
+      status('New AML document written');
+    });
+
+    $('update').onclick = () => guarded(async () => {
+      const body = JSON.stringify({ aml: openedAml, model: await modeler.exportModel(), hierarchy: openedHierarchy });
+      const { text, info } = await call('api/update', body, 'application/json');
+      openedAml = text;
+      download(`${openedName}.aml`, 'application/xml', text);
+      status(`Updated: ${info.added} added, ${info.updated} updated, ${info.removed} removed`
+        + (info.notes?.length ? `. ${info.notes[0]}` : ''));
+    });
+
+    $('validate').onclick = () => guarded(async () => {
+      const { text } = await call('api/validate', await modeler.exportModel(), 'application/json');
+      const { findings } = JSON.parse(text);
+      const list = $('findings');
+      list.replaceChildren(...findings.map((f) => {
+        const row = document.createElement('div');
+        row.textContent = `${f.severity.toUpperCase()} ${f.rule}: ${f.message}`;
+        row.onclick = () => {
+          const element = f.element && modeler.get('elementRegistry').get(f.element);
+          if (element) {
+            modeler.get('selection').select(element);
+            modeler.get('canvas').scrollToElement(element);
+          }
+        };
+        return row;
+      }));
+      status(findings.length ? `${findings.length} finding(s)` : 'No findings');
+    });
+
+    $('svg').onclick = () => guarded(async () =>
+      download(`${openedName}.svg`, 'image/svg+xml', (await modeler.saveSVG()).svg));
+  </script>
+</body>
+</html>

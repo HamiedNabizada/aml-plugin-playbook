@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>EFL modeler</title>
+  <link rel="stylesheet" href="efl.css">
+  <style>
+    #boot-error {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      padding: 2em;
+      background: #fff;
+      color: #a00;
+      white-space: pre-wrap;
+      font-family: monospace;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas"></div>
+  <div id="boot-error"></div>
+
+  <script type="module">
+    // One page for both hosts: inside WebView2 the bridge talks to the plugin,
+    // in a normal browser window.efl is there to drive the modeler by hand or
+    // from a test.
+    import { EflModeler, connectBridge, installDiagnostics } from './efl.esm.js';
+
+    try {
+      if (window.chrome?.webview) installDiagnostics();
+
+      const modeler = new EflModeler({ container: document.getElementById('canvas') });
+      await modeler.createNew();
+
+      const bridge = connectBridge(modeler);
+      window.efl = { modeler, bridge };
+    } catch (e) {
+      const box = document.getElementById('boot-error');
+      box.textContent = 'The modeler could not start:\n' + (e?.stack || e);
+      box.style.display = 'flex';
+      window.chrome?.webview?.postMessage({ type: 'error', message: String(e?.stack || e) });
+    }
+  </script>
+</body>
+</html>

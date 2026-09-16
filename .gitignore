@@ -1,0 +1,22 @@
+bin/
+obj/
+node_modules/
+dist/
+*.user
+.vs/
+TestResults/
+publish/
+
+# Plugin packages, built by `dotnet build` in starter/plugin.
+starter/plugin/build/
+
+# Staged into the web app by its build: copies of starter/web/dist and starter/examples.
+starter/dotnet/Efl.Web/wwwroot/efl.esm.js
+starter/dotnet/Efl.Web/wwwroot/efl.css
+starter/dotnet/Efl.Web/wwwroot/examples/
+
+# Aml.Engine drops the CAEX schema next to files it loads or saves from disk.
+**/CAEX_ClassModel_V.3.0.xsd
+
+# Pictures written by web/tools/screenshot.mjs, for looking, not for keeping.
+starter/web/screenshots/

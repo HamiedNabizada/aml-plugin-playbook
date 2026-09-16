@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aml.Editor.Plugin.Efl", "Aml.Editor.Plugin.Efl\Aml.Editor.Plugin.Efl.csproj", "{87A9FE8B-DF61-40B5-8234-2B5B5FAF91F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Aml.Editor.Plugin.Efl.Tests", "Aml.Editor.Plugin.Efl.Tests\Aml.Editor.Plugin.Efl.Tests.csproj", "{C800498F-B0FB-47FE-B3BC-05BA8F693B00}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{87A9FE8B-DF61-40B5-8234-2B5B5FAF91F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{87A9FE8B-DF61-40B5-8234-2B5B5FAF91F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{87A9FE8B-DF61-40B5-8234-2B5B5FAF91F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{87A9FE8B-DF61-40B5-8234-2B5B5FAF91F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C800498F-B0FB-47FE-B3BC-05BA8F693B00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C800498F-B0FB-47FE-B3BC-05BA8F693B00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C800498F-B0FB-47FE-B3BC-05BA8F693B00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C800498F-B0FB-47FE-B3BC-05BA8F693B00}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

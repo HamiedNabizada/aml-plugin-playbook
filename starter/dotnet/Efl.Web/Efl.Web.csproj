@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- A clean starter builds without warnings; a new one is yours. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Efl.Conversion\Efl.Conversion.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <EflDistDir>$(MSBuildThisFileDirectory)..\..\web\dist</EflDistDir>
+  </PropertyGroup>
+
+  <!-- The modeler bundle, staged into wwwroot.
+       Copied rather than linked: the Web SDK serves wwwroot from the content
+       root, so linked items are found in a publish but not by `dotnet run`,
+       and the local page silently loses the modeler. The staged files are
+       ignored by git. Failing the build when the bundle is missing beats a
+       page that loads without a canvas. -->
+  <Target Name="StageModeler" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(EflDistDir)\efl.esm.js')"
+           Text="The modeler bundle is missing. Run 'npm install' and 'npm run build' in starter/web." />
+    <Copy SourceFiles="$(EflDistDir)\efl.esm.js;$(EflDistDir)\efl.css"
+          DestinationFolder="$(MSBuildThisFileDirectory)wwwroot"
+          SkipUnchangedFiles="true" />
+    <!-- Cleaned first: a renamed or deleted example would otherwise stay in
+         wwwroot and keep being served. -->
+    <RemoveDir Directories="$(MSBuildThisFileDirectory)wwwroot\examples" />
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\..\examples\bottling-line.json"
+          DestinationFolder="$(MSBuildThisFileDirectory)wwwroot\examples"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+</Project>

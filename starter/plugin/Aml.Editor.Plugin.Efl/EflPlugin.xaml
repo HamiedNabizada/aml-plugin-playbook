@@ -1,0 +1,102 @@
+<aml:PluginViewBase
+    x:Class="Aml.Editor.Plugin.Efl.EflPlugin"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+    xmlns:aml="clr-namespace:Aml.Editor.Plugin.WPFBase;assembly=Aml.Editor.Plugin.Contract">
+
+    <TabControl>
+        <TabItem Header="Diagram">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <!-- Sized in pixels because a GridSplitter can only resize a
+                         concrete height; zero while the findings are hidden. -->
+                    <RowDefinition Height="0" x:Name="FindingsRow"/>
+                </Grid.RowDefinitions>
+
+                <!-- Everything lives in this toolbar, nothing on the editor's
+                     toolbar: the editor shows the commands of one plugin at a
+                     time there, so with two language plugins installed their
+                     commands appeared in each other's tabs. Frequent actions are
+                     buttons; occasional ones share one menu, so the bar does not
+                     grow with every command added later. -->
+                <ToolBar Grid.Row="0">
+                    <Button Content="Update" Click="UpdateButton_Click"
+                            ToolTip="Write the diagram into the AML document, keeping everything else in it."/>
+                    <Button Content="Refresh" Click="RefreshButton_Click"
+                            ToolTip="Discard the diagram and load it again from the AML document."/>
+                    <Separator/>
+                    <Button x:Name="DiagramMenuButton" Content="Diagram &#x25BE;" Click="DiagramMenuButton_Click">
+                        <Button.ContextMenu>
+                            <ContextMenu x:Name="DiagramMenu">
+                                <MenuItem x:Name="NewDiagramItem" Header="New Diagram"/>
+                                <MenuItem x:Name="ImportJsonItem" Header="Import JSON..."/>
+                                <Separator/>
+                                <MenuItem Header="Export JSON..." Click="ExportJson_Click"/>
+                                <MenuItem Header="Export SVG..." Click="ExportSvg_Click"/>
+                            </ContextMenu>
+                        </Button.ContextMenu>
+                    </Button>
+                    <!-- Hidden while the document holds a single diagram. -->
+                    <ComboBox x:Name="DiagramPicker" MinWidth="160" Visibility="Collapsed"
+                              ToolTip="The document holds more than one diagram. Pick the one to show."
+                              SelectionChanged="DiagramPicker_SelectionChanged"/>
+                    <Separator/>
+                    <Button x:Name="FindingsButton" Visibility="Collapsed" Click="FindingsButton_Click"/>
+                    <TextBlock x:Name="StatusLabel" VerticalAlignment="Center" Margin="6,0" Foreground="#666" FontStyle="Italic"/>
+                    <TextBlock x:Name="PendingLabel" VerticalAlignment="Center" Margin="6,0" Foreground="#B36B00"/>
+                </ToolBar>
+
+                <Grid Grid.Row="1">
+                    <wv2:WebView2 x:Name="Modeler"/>
+                    <Border x:Name="Placeholder" Background="#F8F8F8">
+                        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#666"
+                                   TextWrapping="Wrap" MaxWidth="480" TextAlignment="Center"
+                                   Text="Open an AML document. Use New Diagram or Import JSON in the Diagram menu to add a diagram, or open a document that already holds one."/>
+                    </Border>
+                </Grid>
+
+                <!-- A GridSplitter has to be a direct child of the Grid it resizes. -->
+                <GridSplitter Grid.Row="2" x:Name="FindingsSplitter" Height="4" HorizontalAlignment="Stretch"
+                              Background="#DDD" Visibility="Collapsed"/>
+                <DockPanel Grid.Row="3" x:Name="FindingsPanel" Visibility="Collapsed">
+                    <DataGrid x:Name="FindingsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                              HeadersVisibility="Column" FontSize="11"
+                              MouseDoubleClick="FindingsGrid_MouseDoubleClick"
+                              ToolTip="Double-click a finding to select its element.">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Severity" Binding="{Binding Severity}" Width="70"/>
+                            <DataGridTextColumn Header="Rule" Binding="{Binding Rule}" Width="55"/>
+                            <!-- By name: a list of GUIDs says nothing to a user. -->
+                            <DataGridTextColumn Header="Element" Binding="{Binding Element}" Width="130"/>
+                            <DataGridTextColumn Header="Message" Binding="{Binding Message}" Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </DockPanel>
+            </Grid>
+        </TabItem>
+
+        <TabItem Header="Diagnostics">
+            <DockPanel Margin="8">
+                <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6">
+                    <CheckBox x:Name="SaveAfterUpdateToggle" Content="Save the document after Update" Margin="0,0,12,4"
+                              Checked="Settings_Changed" Unchecked="Settings_Changed"/>
+                    <CheckBox x:Name="AskBeforeLargeToggle" Content="Ask before updates changing more than" Margin="0,0,4,4"
+                              Checked="Settings_Changed" Unchecked="Settings_Changed"/>
+                    <TextBox x:Name="ThresholdInput" Width="34" Margin="0,0,12,4" LostFocus="Settings_Changed"/>
+                    <CheckBox x:Name="ElementStyleToggle" Content="New diagrams write flows as elements" Margin="0,0,12,4"
+                              ToolTip="Off: flows are InternalLinks between node interfaces. On: each flow is an element of its own with two links. Existing diagrams keep their encoding."
+                              Checked="Settings_Changed" Unchecked="Settings_Changed"/>
+                    <CheckBox x:Name="DebugToggle" Content="Verbose log" Margin="0,0,12,4"
+                              Checked="Settings_Changed" Unchecked="Settings_Changed"/>
+                    <Button Content="Open log folder" Padding="8,1" Click="OpenLogFolder_Click"/>
+                </WrapPanel>
+                <TextBox x:Name="LogBox" IsReadOnly="True" FontFamily="Consolas" FontSize="11"
+                         VerticalScrollBarVisibility="Auto" TextWrapping="Wrap"/>
+            </DockPanel>
+        </TabItem>
+    </TabControl>
+</aml:PluginViewBase>

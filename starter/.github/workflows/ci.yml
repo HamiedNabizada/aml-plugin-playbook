@@ -1,0 +1,81 @@
+name: build and test
+
+# Written for the root of a repository made from the starter. The playbook runs
+# the same steps from its own workflow, one folder further down.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write   # the release step on a version tag
+
+jobs:
+  windows:
+    # Windows: the plugin targets net8.0-windows and WPF.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      # First: the web app and the plugin refuse to build without the bundle.
+      - name: Build the modeler bundle
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+          npx playwright install chromium
+
+      - name: Test the mapper
+        working-directory: dotnet
+        run: dotnet test Efl.sln -c Release
+
+      # The example files are written by the tool with a fixed timestamp. If
+      # writing them again changes a byte, the mapper changed and the examples
+      # were not written again.
+      - name: Check that the example files are current
+        working-directory: dotnet
+        shell: bash
+        run: |
+          T="dotnet run --project Efl.Tool -c Release --"
+          $T to-aml ../examples/bottling-line.json ../examples/bottling-line.links.aml --timestamp 2026-01-01T00:00:00Z
+          $T to-aml ../examples/bottling-line.json ../examples/bottling-line.elements.aml --style element --timestamp 2026-01-01T00:00:00Z
+          git diff --exit-code -- ../examples
+
+      - name: Test the modeler and the bridge in a browser
+        working-directory: web
+        run: npm test
+
+      - name: Test the web app end to end
+        working-directory: web
+        run: npm run test:webapp
+
+      # Builds the Release package and checks what is in it.
+      - name: Build and test the plugin package
+        working-directory: plugin
+        run: dotnet test Aml.Editor.Plugin.Efl.sln -c Release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-nupkg
+          path: plugin/build/Aml.Editor.Plugin.Efl/Release/*.nupkg
+
+      - name: Publish a release for a version tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: plugin/build/Aml.Editor.Plugin.Efl/Release/*.nupkg
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -1,0 +1,426 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CAEXFile SchemaVersion="3.0" FileName="bottling-line.elements.aml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.dke.de/CAEX">
+  <SuperiorStandardVersion>AutomationML 2.1</SuperiorStandardVersion>
+  <SourceDocumentInformation OriginName="efl-aml-mapper" OriginID="efl-aml-mapper" OriginVersion="0.1.0" LastWritingDateTime="2026-01-01T01:00:00+01:00" />
+  <ExternalReference Path="AutomationML_Base_Libraries_AMLEd2_2.11.0.aml" Alias="AutomationMLBaseLibrariesAMLEd22_11_0" />
+  <InstanceHierarchy Name="EFL_Diagrams" ID="{67ba7ec4-fdb7-5a0c-bc4d-2ed4ab5df815}">
+    <Version>1.0.0</Version>
+    <InternalElement Name="Bottling line" ID="{b90dccce-9892-5566-934c-db85b1fc343b}" RefBaseSystemUnitPath="EFL_SystemUnitClassLib/EFL_Diagram">
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string">
+          <Value>line</Value>
+        </Attribute>
+        <Attribute Name="name" AttributeDataType="xs:string">
+          <Value>Bottling line</Value>
+        </Attribute>
+      </Attribute>
+      <InternalElement Name="Fill" ID="{b66804e9-e6b7-5a62-940a-a0121cd5f33e}" RefBaseSystemUnitPath="EFL_SystemUnitClassLib/EFL_Step">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>fill</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Fill</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>0</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>0</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>100</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>60</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="Duration" AttributeDataType="xs:double" Unit="s">
+          <DefaultValue>0</DefaultValue>
+          <Value>12</Value>
+        </Attribute>
+        <ExternalInterface Name="Out_f1" ID="{107402c4-b78e-5f49-8365-c7dac5927f83}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowEnd" />
+        <ExternalInterface Name="In_f3" ID="{5a6cf770-dc74-5d4f-a60c-e6b7cc2e0d34}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowEnd" />
+        <RoleRequirements RefBaseRoleClassPath="EFL_RoleClassLib/EFL_Step" />
+      </InternalElement>
+      <InternalElement Name="Buffer" ID="{c8c8d76e-c116-5136-ac6b-40e2b604de42}" RefBaseSystemUnitPath="EFL_SystemUnitClassLib/EFL_Store">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>buffer</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Buffer</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>200</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>0</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>100</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>60</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="Capacity" AttributeDataType="xs:double">
+          <DefaultValue>0</DefaultValue>
+          <Value>20</Value>
+        </Attribute>
+        <ExternalInterface Name="In_f1" ID="{d24b4cf7-afe3-52b2-8f53-1e5a71c44c98}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowEnd" />
+        <ExternalInterface Name="Out_f2" ID="{a52ddd82-181a-5e58-a4aa-1accc4938b8c}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowEnd" />
+        <RoleRequirements RefBaseRoleClassPath="EFL_RoleClassLib/EFL_Store" />
+      </InternalElement>
+      <InternalElement Name="Cap" ID="{ec0e542e-a016-5528-ab0d-5c657abc5ed9}" RefBaseSystemUnitPath="EFL_SystemUnitClassLib/EFL_Step">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>cap</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Cap</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>400</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>0</Value>
+            </Attribute>
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double">
+            <Value>100</Value>
+          </Attribute>
+          <Attribute Name="height" AttributeDataType="xs:double">
+            <Value>60</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="Duration" AttributeDataType="xs:double" Unit="s">
+          <DefaultValue>0</DefaultValue>
+          <Value>5</Value>
+        </Attribute>
+        <ExternalInterface Name="In_f2" ID="{3df1f584-c3a8-5123-8505-680ccbd1df68}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowEnd" />
+        <ExternalInterface Name="Out_f3" ID="{4dcfe66c-4ccc-5426-9fad-cb4cf6e4ad28}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowEnd" />
+        <RoleRequirements RefBaseRoleClassPath="EFL_RoleClassLib/EFL_Step" />
+      </InternalElement>
+      <InternalElement Name="Fill_to_Buffer" ID="{c606cef4-164a-5985-adaf-14e69a537ca0}" RefBaseSystemUnitPath="EFL_SystemUnitClassLib/EFL_Flow">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>f1</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Fill_to_Buffer</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double" />
+            <Attribute Name="y" AttributeDataType="xs:double" />
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double" />
+          <Attribute Name="height" AttributeDataType="xs:double" />
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{34b95d25-2abd-5034-bf2b-5adab1525473}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>100</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>30</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{6b49870d-3e68-5e97-bf1a-954681cb805e}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>200</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>30</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="EFL_RoleClassLib/EFL_Flow" />
+      </InternalElement>
+      <InternalElement Name="Buffer_to_Cap" ID="{b252314c-dcf3-514f-a81f-3e9fd6e8f84a}" RefBaseSystemUnitPath="EFL_SystemUnitClassLib/EFL_Flow">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>f2</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Buffer_to_Cap</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double" />
+            <Attribute Name="y" AttributeDataType="xs:double" />
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double" />
+          <Attribute Name="height" AttributeDataType="xs:double" />
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{477f4a64-dfcd-5956-9c95-9e596cb542db}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>300</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>30</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{1d97e8fc-acb2-5581-b8bb-512475082218}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>400</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>30</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="EFL_RoleClassLib/EFL_Flow" />
+      </InternalElement>
+      <InternalElement Name="Cap_to_Fill" ID="{ede3ebbf-b68d-5f19-b64f-840e345ef7c6}" RefBaseSystemUnitPath="EFL_SystemUnitClassLib/EFL_Flow">
+        <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+          <Attribute Name="id" AttributeDataType="xs:string">
+            <Value>f3</Value>
+          </Attribute>
+          <Attribute Name="name" AttributeDataType="xs:string">
+            <Value>Cap_to_Fill</Value>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double" />
+            <Attribute Name="y" AttributeDataType="xs:double" />
+          </Attribute>
+          <Attribute Name="width" AttributeDataType="xs:double" />
+          <Attribute Name="height" AttributeDataType="xs:double" />
+        </Attribute>
+        <Attribute Name="Waypoint_1" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Waypoint">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>450</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>200</Value>
+            </Attribute>
+          </Attribute>
+        </Attribute>
+        <Attribute Name="Waypoint_2" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Waypoint">
+          <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>50</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>200</Value>
+            </Attribute>
+          </Attribute>
+        </Attribute>
+        <ExternalInterface Name="Source" ID="{81d27595-2100-5b8b-bea7-c1ba7acbedae}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowSource">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>450</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>60</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <ExternalInterface Name="Target" ID="{1a72ed05-78f6-5cc0-b6d9-ed78cf005a1d}" RefBaseClassPath="EFL_InterfaceClassLib/EFL_FlowTarget">
+          <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+            <Attribute Name="x" AttributeDataType="xs:double">
+              <Value>50</Value>
+            </Attribute>
+            <Attribute Name="y" AttributeDataType="xs:double">
+              <Value>60</Value>
+            </Attribute>
+          </Attribute>
+        </ExternalInterface>
+        <RoleRequirements RefBaseRoleClassPath="EFL_RoleClassLib/EFL_Flow" />
+      </InternalElement>
+      <InternalLink RefPartnerSideA="{34b95d25-2abd-5034-bf2b-5adab1525473}" RefPartnerSideB="{107402c4-b78e-5f49-8365-c7dac5927f83}" Name="Fill_to_Buffer_source" ID="{6a64db65-07e0-5565-8c09-66e355ecae98}" />
+      <InternalLink RefPartnerSideA="{6b49870d-3e68-5e97-bf1a-954681cb805e}" RefPartnerSideB="{d24b4cf7-afe3-52b2-8f53-1e5a71c44c98}" Name="Fill_to_Buffer_target" ID="{5bee8212-82a9-526f-87d9-42fa33dfee11}" />
+      <InternalLink RefPartnerSideA="{477f4a64-dfcd-5956-9c95-9e596cb542db}" RefPartnerSideB="{a52ddd82-181a-5e58-a4aa-1accc4938b8c}" Name="Buffer_to_Cap_source" ID="{1f6c9c96-2fc9-5e2f-9410-6737e204f29c}" />
+      <InternalLink RefPartnerSideA="{1d97e8fc-acb2-5581-b8bb-512475082218}" RefPartnerSideB="{3df1f584-c3a8-5123-8505-680ccbd1df68}" Name="Buffer_to_Cap_target" ID="{3c7d275b-66ae-5654-af3b-9762ae5832ef}" />
+      <InternalLink RefPartnerSideA="{81d27595-2100-5b8b-bea7-c1ba7acbedae}" RefPartnerSideB="{4dcfe66c-4ccc-5426-9fad-cb4cf6e4ad28}" Name="Cap_to_Fill_source" ID="{d192b8fc-3317-5d9c-a7f7-1b89c66b4a64}" />
+      <InternalLink RefPartnerSideA="{1a72ed05-78f6-5cc0-b6d9-ed78cf005a1d}" RefPartnerSideB="{5a6cf770-dc74-5d4f-a60c-e6b7cc2e0d34}" Name="Cap_to_Fill_target" ID="{4e1a5765-0d4d-553d-83ff-9be248b30ec2}" />
+      <RoleRequirements RefBaseRoleClassPath="EFL_RoleClassLib/EFL_Diagram" />
+      <RoleRequirements RefBaseRoleClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure" />
+    </InternalElement>
+  </InstanceHierarchy>
+  <InterfaceClassLib Name="EFL_InterfaceClassLib">
+    <Description>Connection endpoints of the Example Flow Language. The first pair is used when a flow is an InternalLink between nodes, the second group when a flow is an element of its own.</Description>
+    <Version>0.1.0</Version>
+    <InterfaceClass Name="EFL_Port" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLInterfaceClassLib/AutomationMLBaseInterface/Port">
+      <Description>Abstract base port. Carries the docking point of a connection.</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="PortCoordinate" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+    </InterfaceClass>
+    <InterfaceClass Name="EFL_FlowOut" RefBaseClassPath="EFL_InterfaceClassLib/EFL_Port">
+      <Description>Outgoing end of a flow, on the source node.</Description>
+      <Version>0.1.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="EFL_FlowIn" RefBaseClassPath="EFL_InterfaceClassLib/EFL_Port">
+      <Description>Incoming end of a flow, on the target node.</Description>
+      <Version>0.1.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="EFL_FlowEnd" RefBaseClassPath="EFL_InterfaceClassLib/EFL_Port">
+      <Description>Port on a node that a flow element attaches to.</Description>
+      <Version>0.1.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="EFL_FlowSource" RefBaseClassPath="EFL_InterfaceClassLib/EFL_Port">
+      <Description>Source end of a flow element.</Description>
+      <Version>0.1.0</Version>
+    </InterfaceClass>
+    <InterfaceClass Name="EFL_FlowTarget" RefBaseClassPath="EFL_InterfaceClassLib/EFL_Port">
+      <Description>Target end of a flow element.</Description>
+      <Version>0.1.0</Version>
+    </InterfaceClass>
+  </InterfaceClassLib>
+  <RoleClassLib Name="EFL_RoleClassLib">
+    <Description>Meaning of the Example Flow Language: what an element is, independent of how it is created.</Description>
+    <Version>0.1.0</Version>
+    <RoleClass Name="EFL_Diagram" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure">
+      <Description>One diagram. Holds the elements of a model.</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="EFL_Element" RefBaseClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole">
+      <Description>Abstract base of every element of a diagram.</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+        <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+          <Attribute Name="x" AttributeDataType="xs:double" />
+          <Attribute Name="y" AttributeDataType="xs:double" />
+        </Attribute>
+        <Attribute Name="width" AttributeDataType="xs:double" />
+        <Attribute Name="height" AttributeDataType="xs:double" />
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="EFL_Step" RefBaseClassPath="EFL_RoleClassLib/EFL_Element">
+      <Description>An activity that takes time.</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="Duration" AttributeDataType="xs:double" Unit="s">
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="EFL_Store" RefBaseClassPath="EFL_RoleClassLib/EFL_Element">
+      <Description>A place where something waits.</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="Capacity" AttributeDataType="xs:double">
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+    </RoleClass>
+    <RoleClass Name="EFL_Flow" RefBaseClassPath="EFL_RoleClassLib/EFL_Element">
+      <Description>A directed connection from one element to another. Written either as an InternalLink between interfaces of the two nodes, or as an element of its own; see the mapper's connection style.</Description>
+      <Version>0.1.0</Version>
+    </RoleClass>
+  </RoleClassLib>
+  <SystemUnitClassLib Name="EFL_SystemUnitClassLib">
+    <Description>Templates instances are created from. Each one names its role class through SupportedRoleClass, so another template from a vendor catalogue can fulfil the same role.</Description>
+    <Version>0.1.0</Version>
+    <SystemUnitClass Name="EFL_Diagram" ID="{24472960-9774-5203-8d5d-b9508d79eaff}">
+      <Version>0.1.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="EFL_RoleClassLib/EFL_Diagram" />
+      <SupportedRoleClass RefRoleClassPath="AutomationMLBaseLibrariesAMLEd22_11_0@AutomationMLBaseRoleClassLib/AutomationMLBaseRole/Structure" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="EFL_Element" ID="{ab0d709d-249b-5de9-8c4e-3c1a56e7b9f7}">
+      <Version>0.1.0</Version>
+      <Attribute Name="Identification" AttributeDataType="xs:string" RefAttributeType="EFL_AttributeTypeLib/EFL_Identification">
+        <Attribute Name="id" AttributeDataType="xs:string" />
+        <Attribute Name="name" AttributeDataType="xs:string" />
+      </Attribute>
+      <Attribute Name="ViewInformation" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Bounds">
+        <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+          <Attribute Name="x" AttributeDataType="xs:double" />
+          <Attribute Name="y" AttributeDataType="xs:double" />
+        </Attribute>
+        <Attribute Name="width" AttributeDataType="xs:double" />
+        <Attribute Name="height" AttributeDataType="xs:double" />
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="EFL_RoleClassLib/EFL_Element" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="EFL_Step" ID="{c405c2d3-80a1-5f0c-91ec-1b078f986cd7}" RefBaseClassPath="EFL_SystemUnitClassLib/EFL_Element">
+      <Version>0.1.0</Version>
+      <Attribute Name="Duration" AttributeDataType="xs:double" Unit="s">
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="EFL_RoleClassLib/EFL_Step" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="EFL_Store" ID="{4ac07f32-56ee-5c30-b11c-426fbc139cf4}" RefBaseClassPath="EFL_SystemUnitClassLib/EFL_Element">
+      <Version>0.1.0</Version>
+      <Attribute Name="Capacity" AttributeDataType="xs:double">
+        <DefaultValue>0</DefaultValue>
+      </Attribute>
+      <SupportedRoleClass RefRoleClassPath="EFL_RoleClassLib/EFL_Store" />
+    </SystemUnitClass>
+    <SystemUnitClass Name="EFL_Flow" ID="{ffe6a8ba-ba82-5716-bf1a-81cca5b272b7}" RefBaseClassPath="EFL_SystemUnitClassLib/EFL_Element">
+      <Version>0.1.0</Version>
+      <SupportedRoleClass RefRoleClassPath="EFL_RoleClassLib/EFL_Flow" />
+    </SystemUnitClass>
+  </SystemUnitClassLib>
+  <AttributeTypeLib Name="OMG_DD_AttributeTypeLib">
+    <Description>Language-agnostic diagram-interchange attribute types, structured after the OMG Diagram Definition (DD) specification: DD_Bounds (DC::Bounds), DD_Point (DC::Point), DD_Waypoint (DI::Waypoint). Referenced by the VDI_FPD and ISO_PT domain libraries.</Description>
+    <Version>0.1.0</Version>
+    <AttributeType Name="DD_Bounds" AttributeDataType="xs:string">
+      <Description>A rectangular area defined by a top-left (x, y) location and a size (width, height) along the x-y axes (cf. DC::Bounds).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+      <Attribute Name="width" AttributeDataType="xs:double" />
+      <Attribute Name="height" AttributeDataType="xs:double" />
+    </AttributeType>
+    <AttributeType Name="DD_Waypoint" AttributeDataType="xs:string">
+      <Description>A routing point along a connection path (cf. DI::Waypoint).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="position" AttributeDataType="xs:string" RefAttributeType="OMG_DD_AttributeTypeLib/DD_Point">
+        <Attribute Name="x" AttributeDataType="xs:double" />
+        <Attribute Name="y" AttributeDataType="xs:double" />
+      </Attribute>
+    </AttributeType>
+    <AttributeType Name="DD_Point" AttributeDataType="xs:string">
+      <Description>A two-dimensional point in a coordinate system (cf. DC::Point).</Description>
+      <Version>0.1.0</Version>
+      <Attribute Name="x" AttributeDataType="xs:double" />
+      <Attribute Name="y" AttributeDataType="xs:double" />
+    </AttributeType>
+  </AttributeTypeLib>
+  <AttributeTypeLib Name="EFL_AttributeTypeLib">
+    <Description>Data types of the Example Flow Language.</Description>
+    <Version>0.1.0</Version>
+    <AttributeType Name="EFL_Identification" AttributeDataType="xs:string">
+      <Description>The element's own identifier and name, as the language means them.</Description>
+      <Version>1.0.0</Version>
+      <Attribute Name="id" AttributeDataType="xs:string" />
+      <Attribute Name="name" AttributeDataType="xs:string" />
+    </AttributeType>
+  </AttributeTypeLib>
+</CAEXFile>

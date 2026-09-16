@@ -1,0 +1,90 @@
+name: starter
+
+# Keeps the playbook honest: the starter it tells people to copy has to build
+# and pass its tests, and so does a copy renamed by tools/new-language.mjs.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  starter:
+    runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: starter
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: starter/web/package-lock.json
+
+      - name: Build the modeler bundle
+        working-directory: starter/web
+        run: |
+          npm ci
+          npm run build
+          npx playwright install chromium
+
+      - name: Test the mapper
+        working-directory: starter/dotnet
+        run: dotnet test Efl.sln -c Release
+
+      # The example files are written by the tool with a fixed timestamp. If
+      # writing them again changes a byte, the mapper changed and the examples
+      # were not written again.
+      - name: Check that the example files are current
+        working-directory: starter/dotnet
+        shell: bash
+        run: |
+          T="dotnet run --project Efl.Tool -c Release --"
+          $T to-aml ../examples/bottling-line.json ../examples/bottling-line.links.aml --timestamp 2026-01-01T00:00:00Z
+          $T to-aml ../examples/bottling-line.json ../examples/bottling-line.elements.aml --style element --timestamp 2026-01-01T00:00:00Z
+          git diff --exit-code -- ../examples
+
+      - name: Test the modeler and the bridge
+        working-directory: starter/web
+        run: npm test
+
+      - name: Test the web app
+        working-directory: starter/web
+        run: npm run test:webapp
+
+      - name: Build and test the plugin package
+        working-directory: starter/plugin
+        run: dotnet test Aml.Editor.Plugin.Efl.sln -c Release
+
+  renamed-copy:
+    # The rename script is part of the recipe; a copy it makes must work too.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Make a renamed copy
+        run: node tools/new-language.mjs ../copy Sm "State Machine"
+
+      - name: Build and test the copy
+        shell: bash
+        working-directory: ../copy
+        run: |
+          set -e
+          if grep -rIl --exclude-dir=node_modules -e 'Efl' -e 'EFL_' -e 'efl-' .; then
+            echo "The files above still name the starter language."; exit 1
+          fi
+          (cd web && npm install --no-audit --no-fund && npm run build && npx playwright install chromium && npm test)
+          (cd dotnet && dotnet test Sm.sln)
+          (cd web && npm run test:webapp)
+          (cd plugin && dotnet test Aml.Editor.Plugin.Sm.sln)

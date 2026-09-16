@@ -1,0 +1,24 @@
+{
+  "name": "efl-modeler",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A diagram-js modeler for the Example Flow Language, bundled into one file for the WebView2 host and the web page.",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node tools/verify-modeler.mjs && node tools/verify-bridge.mjs",
+    "test:webapp": "node tools/verify-webapp.mjs",
+    "browsers": "playwright install chromium",
+    "screenshot": "node tools/screenshot.mjs"
+  },
+  "dependencies": {
+    "diagram-js": "15.26.0",
+    "diagram-js-direct-editing": "3.5.1",
+    "min-dash": "^4.2.3",
+    "tiny-svg": "^4.1.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "playwright": "^1.53.0"
+  }
+}

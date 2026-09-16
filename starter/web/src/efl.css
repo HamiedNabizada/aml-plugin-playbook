@@ -1,0 +1,32 @@
+@import 'diagram-js/assets/diagram-js.css';
+
+/* The canvas fills its container. The host decides how large that is. */
+html, body {
+  margin: 0;
+  height: 100%;
+  font-family: system-ui, sans-serif;
+}
+
+#canvas {
+  position: absolute;
+  inset: 0;
+}
+
+/* Palette and context pad entries are drawn from inline SVG images. */
+.djs-palette .entry img,
+.djs-context-pad .entry img {
+  width: 24px;
+  height: 24px;
+  display: block;
+  margin: auto;
+  pointer-events: none;
+}
+
+/* The editor's dark theme. Only the page around the drawing changes; the
+   drawing keeps its colours so an exported SVG looks the same in both themes. */
+[data-theme='dark'] body {
+  background: #1e1e1e;
+}
+[data-theme='dark'] #canvas {
+  background: #f4f4f4;
+}
