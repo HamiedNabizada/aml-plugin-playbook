@@ -42,12 +42,7 @@ public static class EflToCaex
         var document = CAEXDocument.New_CAEXDocument();
         document.CAEXFile.FileName = "efl-export.aml";
 
-        var information = document.CAEXFile.SourceDocumentInformation.FirstOrDefault()
-            ?? document.CAEXFile.SourceDocumentInformation.Append();
-        information.OriginName = "efl-aml-mapper";
-        information.OriginID = "efl-aml-mapper";
-        information.OriginVersion = EflNames.LibraryVersion;
-        information.LastWritingDateTime = writtenAt ?? DateTime.UtcNow;
+        EflDocuments.StampSource(document, "efl-aml-mapper", EflNames.LibraryVersion, writtenAt);
 
         AppendInto(document, model, hierarchyName, style);
         return document;

@@ -32,9 +32,9 @@ in [02-modeler-diagram-js.md](02-modeler-diagram-js.md), the wire format in
 
 Two source plugins are referenced throughout:
 
-- **AMLPetriNet** (`Aml.Editor.Plugin.PetriNet`, v0.1.13): one WebView for the whole view, a net picker
+- **AMLPetriNet** (`Aml.Editor.Plugin.PetriNet`, v0.1.14): one WebView for the whole view, a net picker
   when the document holds several nets, PNML text on the wire. Newer and cleaner; start from it.
-- **AMLFPB.js** (`Aml.Editor.Plugin.FPB`, v0.7.3): one sub-tab with its own WebView per FPD instance
+- **AMLFPB.js** (`Aml.Editor.Plugin.FPB`, v0.7.0): one sub-tab with its own WebView per FPD instance
   hierarchy, FPB.js JSON on the wire, a two second hash poll that follows edits made in the AML tree.
   Older, larger, with more recorded fixes (rebuild races, echo windows, pending caches).
 
@@ -65,13 +65,13 @@ versions and keep their assemblies out of your output.
   <ExcludeAssets>runtime</ExcludeAssets>
 </PackageReference>
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:33-44`, identical in
-`AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj:30-41`)
+(the `PackageReference` items in `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj`, identical in
+`AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj`)
 
 Why exact versions: both plugins reach into editor internals by reflection (save command, main view
 model) and match enum names by string (`ApplicationTheme`). A floating `4.*` would change that surface
-with no compile error. The comment that records this decision is at
-`AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj:24-29`. Bump by hand, then run the
+with no compile error. The comment that records this decision sits above the
+`Aml.Editor.Plugin.Contract` `PackageReference` in `AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj`. Bump by hand, then run the
 contract tests (section 11).
 
 `Aml.Editor.Plugin.Contract` 4.3.0 ships builds for `net8.0-windows7.0` and `net10.0-windows7.0` and
@@ -84,8 +84,8 @@ single `[Export]` attribute. Do not copy MEF boilerplate from older examples.
 ```csharp
 public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAMLDocumentLoad
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:23`; the FPD plugin has the same list at
-`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:22`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `PetriNetPlugin`; the FPD plugin declares the same list
+plus `IToolBarIntegration` on `FpbPlugin` in `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`)
 
 `Aml.Editor.Plugin.WPFBase.PluginViewBase` is a `UserControl` that implements `IAMLEditorView` (and
 through it `IAMLEditorPlugin`). The XAML root is the base class itself:
@@ -96,7 +96,7 @@ through it `IAMLEditorPlugin`). The XAML root is the base class itself:
     xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
     xmlns:aml="clr-namespace:Aml.Editor.Plugin.WPFBase;assembly=Aml.Editor.Plugin.Contract"
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml:1-8`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`, root element `aml:PluginViewBase`)
 
 What the contract 4.3.0 offers (from the package's XML documentation), and what the source plugins use:
 
@@ -118,7 +118,7 @@ What the contract 4.3.0 offers (from the package's XML documentation), and what 
 | `INotifyAMLDocumentSaved` | `DocumentSaved(string)` | not used |
 | `ISupportsThemes` | `OnThemeChanged(ApplicationTheme)` | yes |
 | `ISupportsUIZoom` | `OnUIZoomChanged(double)` | not used |
-| `IToolBarIntegration` | `ToolBarCommands` (`List<PluginCommand>`) on the editor toolbar | removed on purpose, see 7.1 |
+| `IToolBarIntegration` | `ToolBarCommands` (`List<PluginCommand>`) on the editor toolbar | Petri net plugin: not implemented on purpose; FPD plugin: New Process and Import, see 7.1 |
 | `ISupportsSelection` | Event `Selected` asks the editor to select a tree node | not used |
 | `INotifyViewActivation` | `Activate(string)` when the editor activates a view | not used |
 | `IEditorCommanding` | Editor sets a callback; `EditorCommandBase.SaveCAEXFile(...)` and friends run File/Save, Open, Close, GetCAEXFile, ImportLibraries, Capture | not used, see 6.6 |
@@ -131,7 +131,7 @@ public override string PackageName => "Aml.Editor.Plugin.PetriNet";
 public override DockPositionEnum InitialDockPosition => DockPositionEnum.DockContent;
 public override bool CanClose => true;
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:280-284`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `PackageName`, `InitialDockPosition`, `CanClose`)
 
 ### 1.3 DisplayName: identifier characters only
 
@@ -141,7 +141,7 @@ public override bool CanClose => true;
 DisplayName = "AMLPetriNet";
 IsReactive = true;
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:89-92`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, constructor `PetriNetPlugin`)
 
 In early FPD versions a display name with a dot or slash threw an `ArgumentException` on activation
 and again when the editor closed. The editor stores the activation state per display name in
@@ -159,19 +159,19 @@ Both plugins keep a `Metadata.xml` next to the assembly:
                        xmlns:xsd="http://www.w3.org/2001/XMLSchema">
   <PackageName>Aml.Editor.Plugin.PetriNet</PackageName>
   <DisplayName>AMLPetriNet</DisplayName>
-  <Version>0.1.13</Version>
-  <Author>VDI 3682 Project</Author>
+  <Version>0.1.14</Version>
+  <Author>Hamied Nabizada</Author>
   <Description>...</Description>
   <MinimumEditorVersion>6.4.0.0</MinimumEditorVersion>
 </PlugInPackageMetaData>
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Metadata.xml:1-10`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Metadata.xml`, `PlugInPackageMetaData`)
 
-It is copied to the build output (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:63`)
+It is copied to the build output (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj`, item `None Include="Metadata.xml"`)
 but the packages built from both projects do not contain it (checked by listing them). The name, description
 and version the PlugIn Manager shows come from the nuspec, which MSBuild derives from `<Title>`,
 `<Description>`, `<Version>`, `<Authors>`, `<PackageTags>`. Keep `Metadata.xml` in sync with the csproj
-version by hand anyway; both projects do (0.1.13 and 0.7.3), and a drift has confused manual installs.
+version by hand anyway; both projects do (0.1.14 and 0.7.0), and a drift has confused manual installs.
 
 ---
 
@@ -200,11 +200,11 @@ Loaded += async (_, __) =>
     }
 };
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:124-151`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, constructor `PetriNetPlugin`)
 
 Split the bridge in two: `CreateBridge` wires events synchronously and is cheap; `InitAsync` boots
-WebView2 and is slow (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:163-200`,
-`:227-231`). Before this split the Petri net plugin could receive `DocumentLoaded` before `Loaded`, find
+WebView2 and is slow (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `CreateBridge`,
+`EnsureBridgeAsync`). Before this split the Petri net plugin could receive `DocumentLoaded` before `Loaded`, find
 `_bridge == null`, and silently lose the net while the log claimed it was buffered.
 
 ### 2.2 Never tear down on Unloaded
@@ -217,14 +217,14 @@ WebView2 and is slow (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xa
 // unsaved canvas edit with it. The WebView lives as long as the view;
 // DocumentUnLoaded and ApplicationClose are the ends of its life.
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:153-158`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, end of constructor `PetriNetPlugin`)
 
 The FPD plugin records the other symptom: disposing on `Unloaded` caused an endless cycle
 (Unloaded, dispose, Loaded, discover, rebuild) that accumulated state inside FPB.js
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:169-180`). It keeps only a detach of the log
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, the `Unloaded` handler in constructor `FpbPlugin`). It keeps only a detach of the log
 subscription in `Unloaded` and re-subscribes defensively in `Loaded` with `-=` before `+=`
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:156-159`). The Petri net plugin shipped with a
-teardown on `Unloaded` first; its own audit found eight re-navigations in one editor session in the log,
+(the `Loaded` handler in the same constructor). The Petri net plugin shipped with a
+teardown on `Unloaded` first; the log of one editor session showed eight re-navigations,
 each re-importing the document state over unsaved edits. Lifetime rule: the WebView lives as long as
 the view object. Real ends are `DocumentUnLoaded` (per document state) and `ApplicationClose` (everything).
 
@@ -239,17 +239,17 @@ public void ApplicationClose()
     catch { /* nothing useful left to do while shutting down */ }
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:369-375`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `ApplicationClose`)
 
 `DocumentUnLoaded` resets per-document state, clears findings, shows the placeholder and invalidates
-command state (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:346-367`). It marshals to
+command state (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `DocumentUnLoaded`). It marshals to
 the UI thread first: the contract does not document which thread calls it.
 
 ### 2.4 Threading
 
 Everything that touches WPF, WebView2 or the CAEX document runs on the UI thread. `Aml.Engine` is not
 thread safe, so the mapper runs synchronously on the UI thread too
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:284-287`). Marshal every editor callback:
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, comment in `UpdateButton_Click`). Marshal every editor callback:
 
 ```csharp
 private void AttachDocument(CAEXDocument document)
@@ -260,12 +260,12 @@ private void AttachDocument(CAEXDocument document)
         return;
     }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:382-388`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `AttachDocument`)
 
 Known cost: an Update on a large FPD document froze the editor for up to 23 s (mapper, validation and
 save in one UI-thread call); the save part is timed in the log for that reason
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/EditorSaver.cs:76-92`). The FPD plugin times each phase
-separately (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:350-356`). If you move read-only work
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/EditorSaver.cs`, `TrySaveActiveDocument`). The FPD plugin times each phase
+separately (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, the "Update timings" log line in `UpdateButton_Click`). If you move read-only work
 (validation) off the thread, marshal the result back.
 
 ---
@@ -283,8 +283,8 @@ separately (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:350-356`). If
 public event EventHandler<CAEXDocument>? IsDocumentLoaded;
 #pragma warning restore CS0067
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:288-296`; the original note is at
-`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:289-293`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `IsDocumentLoaded`; the original note is in
+`DocumentLoaded` in `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`)
 
 `IsDocumentLoaded` means "the plugin loaded a document and wants the editor to open it". Declare it,
 never raise it from `DocumentLoaded`.
@@ -314,23 +314,23 @@ public void DocumentLoaded(CAEXDocument document)
     AttachDocument(document);
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:298-320`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `DocumentLoaded`)
 
 Identity is `(SourceDocumentInformation.OriginID, CAEXFile.FileName)`
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:327-344`). Neither half works alone:
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `IsSameDocument`, `Identity`). Neither half works alone:
 `OriginID` names the **authoring tool** and is the same GUID in every file the editor ever saved. The
 FPD plugin first deduplicated on `OriginID` alone; a second showcase file then looked "already rebuilt",
 its tabs never rendered, and Update wrote into the wrong document
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:386-398`). Two new, unsaved documents have an empty
-identity and must count as distinct (`:339-340`).
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `IsAlreadyRebuilt`). Two new, unsaved documents have an empty
+identity and must count as distinct (`IsSameDocument` in the Petri net plugin).
 
 Open weakness, still in both plugins: `FileName` is the bare name, so two files with the same name in
 different folders count as the same document. `ChangeAMLFilePath` delivers the full path; the FPD
-plugin records it (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:196-200`) but does not yet use it
+plugin records it (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `ChangeAMLFilePath`) but does not yet use it
 for identity. In a new plugin, key identity on the full path from `ChangeAMLFilePath`, with
 `(OriginID, FileName)` as a fallback for unsaved documents. The starter compares `OriginID` plus
 `FileName` like the Petri net plugin and treats an empty `FileName` as distinct
-(`starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:220-237`), so it shares the bare-name
+(`starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs`, `SameFile`), so it shares the bare-name
 weakness; replace that helper when you adapt it.
 
 ### 3.3 Views constructed after the document was opened
@@ -346,11 +346,11 @@ var vm = mainWindow.DataContext;
 ...
 var doc = FindCaexDocumentOnObject(vm, depth: 0);
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/DocumentDiscoverer.cs:43-77`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/DocumentDiscoverer.cs`, `TryFindCurrentDocument`)
 
 The walk takes any property typed `CAEXDocument`, then descends at most two levels into properties named
 `CurrentDocument`, `ActiveDocument`, `Document`, `CAEXDocument`, `AMLDocument`, `OpenedDocument`,
-`SelectedDocument` (`:26-35`, `:79-118`). Every failure is logged and returns null; the worst case is the
+`SelectedDocument` (same file, `CandidatePropertyNames`, `FindCaexDocumentOnObject`). Every failure is logged and returns null; the worst case is the
 old behaviour (user reopens the file). The editor's view model is `Aml.Editor.ViewModels.MainViewModel`
 (visible in the editor's own `ErrorLog.txt` stack traces).
 
@@ -367,8 +367,8 @@ Dispatcher.BeginInvoke(new Action(() =>
     ...
 }), System.Windows.Threading.DispatcherPriority.Background);
 ```
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:257-271`; the Petri net plugin calls it directly
-from `Loaded` at `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:140-147` and would
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `EnsureCurrentDocumentBound`; the Petri net plugin calls it directly
+from the `Loaded` handler in the constructor `PetriNetPlugin` of `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs` and would
 benefit from the deferral)
 
 ### 3.4 Selection
@@ -376,7 +376,7 @@ benefit from the deferral)
 With `IsReactive = true` the editor calls `ChangeSelectedObject(CAEXBasicObject)` on every tree click.
 The FPD plugin uses it as a second source for the document (`selectedObject.CAEXDocument`) and ignores a
 cleared selection so that the bound document survives
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:202-219`). Always call `base.ChangeSelectedObject`.
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `ChangeSelectedObject`). Always call `base.ChangeSelectedObject`.
 
 Treat this callback as re-entrant. Running the editor's save command from inside an Update click can make
 the editor call `ChangeSelectedObject` synchronously, which in the FPD plugin could dispose the very view
@@ -390,8 +390,8 @@ swMapper.Stop();
 // _doc/_ih any further.
 if (_disposed) { PluginLog.Debug($"[{_ihLabel}] Update aborted post-mapper: view disposed during operation."); return; }
 ```
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:308-313`, same after validation `:329` and after
-save `:337-341`, and in the catch block `:366-370`)
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `UpdateButton_Click`; the same guard follows validation
+and save, and sits in the catch block)
 
 The Petri net plugin does not override `ChangeSelectedObject` and binds only through `DocumentLoaded`
 plus discovery; that is enough for a plugin that shows the document's nets regardless of the tree
@@ -417,12 +417,12 @@ if (!string.IsNullOrEmpty(_hierarchyId))
 }
 return _hierarchyName == null ? null : hierarchies.FirstOrDefault(ih => ih.Name == _hierarchyName);
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:431-453`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `CurrentHierarchy`)
 
 Binding by name alone meant a rename in the editor tree lost the binding, and the next Update created a
 second hierarchy. The mapper must write an ID on hierarchies it creates for this to work
 ([04-aml-mapping.md](04-aml-mapping.md)). The FPD plugin raises `LabelChanged` when it notices a rename
-after a push and retitles the tab (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:225-235`).
+after a push and retitles the tab (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `PushIhToWebView`).
 
 `Aml.Engine` wrappers are not reference stable: every access can return a new wrapper object. Compare
 IDs, or the underlying `XElement` (`.Node`), never wrapper references.
@@ -458,8 +458,8 @@ public async Task InitAsync()
     _view.CoreWebView2.Navigate($"https://{VirtualHost}/index.html");
 }
 ```
-(condensed from `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:77-158`; same structure in
-`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs:45-122`)
+(condensed from `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `InitAsync`; same structure in
+`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs`, `InitAsync`)
 
 Order that works:
 
@@ -487,7 +487,7 @@ private static string ResolveAssetsPath()
     return Path.Combine(pluginDir ?? AppContext.BaseDirectory, AssetsFolder);
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:160-165`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `ResolveAssetsPath`)
 
 In the installed editor that resolves to
 `%APPDATA%\AutomationMLEditor\PlugIns6\<PackageId>.<Version>\lib\net8.0-windows7.0\ptnjs-assets`
@@ -499,13 +499,13 @@ Rules for the bundle ([02-modeler-diagram-js.md](02-modeler-diagram-js.md) has t
 - One ESM file, no async chunks, nothing from a CDN. The editor may run offline.
 - The Petri net bundle keeps minification **off**: diagram-js' injector falls back to constructor
   parameter names where `$inject` is missing, and a minified build died at boot
-  (`AMLPetriNet: web/build.mjs:24-43`).
+  (`AMLPetriNet: web/build.mjs`, the `minify: false` entry of `shared` and its comment).
 - Bare specifiers (`react`, `react-dom`) need an import map in `index.html` and vendored files. The
   esm.sh build of `react-dom` carried an absolute `/react@x/...` import that 404s under the virtual host;
   the FPD csproj rewrites it before every build
-  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj:126-140`).
+  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj`, target `PatchVendorReactDom`).
 - Fonts and icons inlined into the stylesheet, so one `<link>` suffices
-  (`AMLPetriNet: web/build.mjs:62-77`).
+  (`AMLPetriNet: web/build.mjs`, the stylesheet build of `assets/pn-js.css` with its `dataurl` loaders).
 
 ### 4.3 The ready handshake
 
@@ -518,7 +518,7 @@ window.chrome?.webview?.addEventListener('message', async (e) => { ... });
 
 post({ type: 'ready', url: location.href });
 ```
-(`AMLPetriNet: web/src/bridge.js:188-239`: the listener is registered first, `ready` is the last
+(`AMLPetriNet: web/src/bridge.js`, `connectBridge`: the listener is registered first, `ready` is the last
 statement)
 
 On the host, buffer everything that arrives before `ready`, and report whether a push went out:
@@ -538,16 +538,16 @@ public bool ImportPnml(string pnml)
     return true;
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:172-184`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `ImportPnml`)
 
 The boolean matters for echo suppression (5.3): a buffered push posts later, so it must not arm anything
-now. Theme is buffered the same way (`:219-230`). On `ready` the bridge sets `_ready`, raises `Ready`,
-then flushes the buffers (`:260-265`, `:293-305`).
+now. Theme is buffered the same way (`SendTheme`). On `ready` the bridge sets `_ready`, raises `Ready`,
+then flushes the buffers (`OnWebMessage`, case `JsMessageType.Ready`; `FlushPending`).
 
 Ordering trap: the host's `Ready` handler runs **before** the flush. In the FPD plugin the `Ready`
-handler pushes the current hierarchy (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:129-134`)
+handler pushes the current hierarchy (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, the `Ready` handler in `BindAsync`)
 and the flush afterwards pushes the older buffered payload over it
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs:228-233`, `:271-275`); this is recorded as an
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs`, `OnWebMessage`, `FlushPending`); this is recorded as an
 open issue. The Petri net plugin avoids the double push by checking `HasPendingImport` before pushing
 from `Ready`:
 
@@ -564,20 +564,20 @@ else if (!_bridge.HasPendingImport)
 }
 if (_lastTheme != null) _bridge.SendTheme(_lastTheme);
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:208-225`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `OnModelerReady`)
 
 The starter moves the rule into the bridge: on `ready` it takes the buffered push into a local, clears
 the buffer, runs the host's `Ready` handler while counting the imports it posts (`_inReadyHandler`,
 `_importsDuringReady`), and posts the buffered push only if the handler posted no import itself
-(`starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs:217-245`). The handler is therefore
+(`starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs`, `OnMessage`, case `MessageType.Ready`). The handler is therefore
 authoritative and needs no pending-import check: it always shows the unsaved edits (`_pendingModel`,
 with `_restoring` set) or reads the bound hierarchy from the document again
-(`starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:130-146`), both newer than the buffer.
+(`starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs`, `OnModelerReady`), both newer than the buffer.
 
 Treat `Ready` as "a page booted", not "the first page booted". It fires again after F5, a context menu
 reload, or a renderer crash recovery. Each time the new page knows nothing: resend the theme, and prefer
 the unsaved diagram over the document (the `_restoringPending` flag keeps the import acknowledgement from
-clearing the pending state, `:184-197`).
+clearing the pending state, the `OnImported` handler in `CreateBridge` of the Petri net plugin).
 
 ### 4.4 Reloads and renderer crashes
 
@@ -599,16 +599,16 @@ _processFailedHandler = (_, e) =>
     }
 };
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:131-148`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `InitAsync`)
 
-Both handlers were missing in the FPD plugin until its stability sprint; a crashed renderer left a white
+Both handlers were missing in the FPD plugin at first; a crashed renderer left a white
 tab with `_ready` still true and every later push silently lost. The FPD version only reports and asks
-for a manual refresh (`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs:106-113`); the Petri net
+for a manual refresh (`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs`, the `ProcessFailed` handler in `InitAsync`); the Petri net
 version reloads for renderer failures, which the host's `Ready` handler then refills. A dead browser
 process cannot be fixed by a reload.
 
 A failed navigation also drops readiness and logs `WebErrorStatus`
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:123-130`).
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `_navigationHandler` in `InitAsync`).
 
 ### 4.5 User data folder
 
@@ -621,7 +621,7 @@ machine). Consequences to plan for:
   use compatible options, or creation fails.
 - `localStorage` persists there across sessions and is shared by pages on the same virtual host name.
   Give each plugin its own host name. The FPD page writes the theme there
-  (`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html:304`); do not rely on it for anything the
+  (`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html`, the `setTheme` branch of the message listener); do not rely on it for anything the
   document should carry.
 - If the editor is installed in a folder the user cannot write to, the default location is not writable.
   This case was not tested in either project. If you need to support it, pass an explicit user data
@@ -632,7 +632,7 @@ machine). Consequences to plan for:
 
 Keep handler delegates in fields so they can be unsubscribed; `Dispose` detaches them, drops readiness
 and clears buffers, and tolerates a `CoreWebView2` that is already gone
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:313-341`).
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `Dispose`).
 
 Detaching handlers does **not** end the browser process. When views are created and destroyed at runtime
 (the FPD plugin creates one per hierarchy on every document switch, New Process and Import), dispose the
@@ -646,9 +646,9 @@ control as well:
 // the browser processes accumulate and drag the editor down.
 try { WebView?.Dispose(); } catch { /* best effort */ }
 ```
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:862-871`)
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `Dispose`)
 
-Also stop timers (`StopLiveSync`, `:861`) and check `_disposed` at the top of every entry point that can
+Also stop timers (`StopLiveSync`, called from the same `Dispose`) and check `_disposed` at the top of every entry point that can
 be reached from a message, a timer tick or a click.
 
 ### 4.7 One WebView, or one per hierarchy
@@ -657,7 +657,7 @@ be reached from a message, a timer tick or a click.
 |---|---|---|
 | Browser processes | one | one per hierarchy, leak risk (4.6) |
 | Switching | reimport, confirm if unsaved (7.4) | instant, each tab keeps its state |
-| Unsaved edits on document switch | one pending buffer | per-hierarchy cache keyed by document identity and hierarchy ID (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:58-71`, `:491-509`) |
+| Unsaved edits on document switch | one pending buffer | per-hierarchy cache keyed by document identity and hierarchy ID (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `_pendingCache`, `OriginIdOf`, `CapturePendingSnapshotsToCache`) |
 | Rebuild races | none | needs a generation token (7.5) |
 
 Start with one WebView and a picker unless users genuinely edit several hierarchies side by side.
@@ -686,13 +686,13 @@ Keep the message set small, typed by a `type` field, and write it down at the to
  *   { type: 'log', level, message }
  *   { type: 'error', message }
 ```
-(`AMLPetriNet: web/src/bridge.js:8-21`)
+(`AMLPetriNet: web/src/bridge.js`, header comment)
 
 Mirror the tags as constants and the payload as one DTO on the C# side
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/BridgeMessage.cs:10-42`). Dispatch with a `switch`, and
-report unknown types as errors (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:242-291`).
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/BridgeMessage.cs`, `JsToHostMessage`, `JsMessageType`). Dispatch with a `switch`, and
+report unknown types as errors (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `OnWebMessage`).
 The FPD plugin adds `processSwitched` (layer changes inside FPB.js,
-`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/BridgeMessage.cs:24-37`).
+`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/BridgeMessage.cs`, `JsMessageType.ProcessSwitched`).
 
 Payload choice: a string field carrying the exchange document (PNML text) is simplest. When the payload
 is JSON, never build the envelope by string concatenation; parse it and let the serializer embed it, so
@@ -706,11 +706,11 @@ envelope = JsonSerializer.Serialize(new
     data = doc.RootElement
 });
 ```
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs:155-170`)
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs`, `ImportJson`)
 
 Page-side graphs with cycles (FPB.js business objects reference each other) need a replacer that turns
 references into IDs before `JSON.stringify`
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html:189-233`). An exchange format with its own
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html`, `extractId`, `sanitiseReplacer`, `safeSnapshot`). An exchange format with its own
 serializer (PNML) avoids that class of problem entirely.
 
 ### 5.2 Requests with answers
@@ -732,7 +732,7 @@ finally
     _svgRequest = null;
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:201-217`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `RequestSvgAsync`)
 
 ### 5.3 Telling import fallout from user edits
 
@@ -743,15 +743,15 @@ change events (and layout settling fires more, later). If the host records those
 The path the FPD plugin took, so you do not repeat it:
 
 1. A fixed time window after each push (3 s, widened after late settling events on slow machines,
-   `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:47-52`). It swallowed genuine edits made inside
+   `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `EchoSuppressionWindow`). It swallowed genuine edits made inside
    the window.
 2. The window was stamped before the push, so a push that was only buffered opened a fake window that
    ate real edits. Fixed by stamping only when the push really went out
-   (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:204-222`).
+   (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `PushIhToWebView`).
 3. The page's own `importing` flag was reset in `requestAnimationFrame`. WebView2 pauses rAF while the
    tab is hidden, so an import into a hidden sub-tab left the flag stuck and swallowed every later edit.
    Fixed with a `setTimeout` fallback and a guard so only the first path settles
-   (`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html:275-299`).
+   (`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html`, `settled` and `settle`).
 4. Final design: **content-based echo baseline.** The page answers each import with `imported`, carrying
    its own export of what it just loaded. A later `changed` with byte-identical content is fallout;
    anything else is an edit, no matter how soon.
@@ -772,7 +772,7 @@ const runImport = async (pnml) => {
   post({ type: 'imported', pnml: await exportPnml() });
 };
 ```
-(`AMLPetriNet: web/src/bridge.js:162-173`)
+(`AMLPetriNet: web/src/bridge.js`, `runImport`)
 
 Host side:
 
@@ -790,49 +790,49 @@ private void OnDiagramChanged(string pnml)
     ...
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:233-255`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `OnDiagramChanged`)
 
 Details that each fixed a real bug:
 
 - **Debounce changes on the page** (300 ms after the last `commandStack.changed`) and export once
-  (`AMLPetriNet: web/src/bridge.js:26`, `:148-157`). One message per gesture, not per command.
+  (`AMLPetriNet: web/src/bridge.js`, `CHANGE_DEBOUNCE_MS`, `scheduleChange`). One message per gesture, not per command.
 - **Serialize imports.** Two imports in quick succession (document switch right after a refresh)
   interleaved at the `await`; the first `finally` cleared the flag while the second import was running
-  and its traffic was reported as edits (`AMLPetriNet: web/src/bridge.js:193-200`).
+  and its traffic was reported as edits (`AMLPetriNet: web/src/bridge.js`, the `importPNML` branch of the message listener in `connectBridge`).
 - **Suppress changes during simulation or any other mode that writes through the command stack.** The
   Petri net modeler's token replay writes markings through the command stack; without suppression a
   mid-simulation marking reached the document on the next Update
-  (`AMLPetriNet: web/src/bridge.js:130-137`, `:175-186`, and `requestExport` refuses during a replay,
-  `:201-215`). Look for the equivalent in your modeler.
+  (`AMLPetriNet: web/src/bridge.js`, `simulating` and its `TOGGLE_SIMULATION_EVENT` listener, and `requestExport` refuses during a replay,
+  the `requestExport` branch of the message listener). Look for the equivalent in your modeler.
 - **Re-anchor the baseline after an Update** on the content just written. Otherwise an undo back to the
   pre-update state matches the old baseline and is silently dropped
-  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:318-323`).
+  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `UpdateButton_Click`).
 - **Clear a stale pending state when the canvas returns to the baseline** (the user undid everything),
-  or Update writes the reverted edit (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:611-633`).
+  or Update writes the reverted edit (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `OnDiagramChangedFromJs`).
   The starter clears the pending model on a change equal to the baseline only when that baseline is the
   document's state (`_baselineIsDocument`, false after a restore of unsaved edits,
-  `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:148-158`, `:160-173`).
+  `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs`, `OnImported`, `OnChanged`).
 - **An import that fails must not acknowledge the old content as the new baseline.** In the Petri net
-  bridge `imported` is posted even after `importPNML` threw, carrying the previous net; its audit rates
-  this latent (normalised IDs keep host-originated documents from failing). The starter bridge posts
+  bridge `imported` is posted even after `importPNML` threw, carrying the previous net; this stays
+  latent there (normalised IDs keep host-originated documents from failing). The starter bridge posts
   only `error` after a failed import and no `imported`, because the host treats `imported` as "the
-  canvas shows what I sent" and would drop its unsaved edits (`starter/web/src/bridge.js:111-127`,
-  checked in `starter/web/tools/verify-bridge.mjs:71-82`). Do the same in a new bridge.
+  canvas shows what I sent" and would drop its unsaved edits (`starter/web/src/bridge.js`, `runImport`,
+  checked by "a broken import is reported as an error and leaves the page working" in `starter/web/tools/verify-bridge.mjs`). Do the same in a new bridge.
 
 ### 5.4 Diagnostics through the bridge
 
 Forward the page's console, `window.error` and `unhandledrejection` to the host log, keeping native
 console calls working and never letting logging throw
-(`AMLPetriNet: web/src/bridge.js:65-99`, `AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html:100-143`).
-Show fatal boot errors in the page and post them (`showFatal`, `AMLPetriNet: web/src/bridge.js:101-112`).
+(`AMLPetriNet: web/src/bridge.js`, `installDiagnostics`; `AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html`, `installConsoleForwarder`).
+Show fatal boot errors in the page and post them (`showFatal` in `AMLPetriNet: web/src/bridge.js`).
 On the host, map levels: `error` and `warn` always, `log` and `debug` only with verbose logging
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:175-183`). Strip CR/LF from forwarded
-lines so a page message cannot forge log records (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginLog.cs:139-144`).
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, the `OnJsLog` handler in `CreateBridge`). Strip CR/LF from forwarded
+lines so a page message cannot forge log records (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginLog.cs`, `SanitiseLine`).
 The `ready` message carries `location.href`; logging it verifies the virtual host mapping in one line.
 
 The FPD plugin also shows a banner over the canvas with a "Refresh from AML" button when the page
-reports an error (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml:100-133`,
-`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:136-145`). An empty canvas with no explanation was
+reports an error (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml`, `JsErrorBanner`;
+`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `ShowJsErrorBanner`). An empty canvas with no explanation was
 the most common complaint before.
 
 ---
@@ -850,8 +850,8 @@ the most common complaint before.
 
 ### 6.2 Pending state must be visible
 
-Show it next to the buttons (`PendingLabel`, `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml:130-135`)
-or in the tab header (`● ` prefix, `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:518-524`). Keep
+Show it next to the buttons (`PendingLabel` in `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`)
+or in the tab header (`● ` prefix, `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `UpdateTabHeader`). Keep
 the header a plain string so the editor skin's `TabItem` template still applies.
 
 ### 6.3 The Update handler
@@ -887,7 +887,7 @@ private void UpdateButton_Click(object sender, RoutedEventArgs e)
     catch (Exception ex) { PluginLog.Error("Failed to write the net into AML", ex); SetStatus("Update failed: " + ex.Message); }
 }
 ```
-(condensed from `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:609-683`)
+(condensed from `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `UpdateButton_Click`)
 
 Requirements this encodes:
 
@@ -896,11 +896,11 @@ Requirements this encodes:
   outside the hierarchy (for example removed a foreign link to a deleted element); the user should hear
   about it, not discover it.
 - Disable the button while the update runs and restore it in `finally`
-  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:288-289`, `:375-383`).
+  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `UpdateButton_Click`).
 - On exception: log with stack, tell the user, keep the pending edits.
 - Before writing, the mapper must check its preconditions and only then modify. A throw halfway through
-  leaves a half-written live document that the next Ctrl+S persists; the Petri net audit found exactly
-  this in an earlier `UpdateInPlace`.
+  leaves a half-written live document that the next Ctrl+S persists; an earlier `UpdateInPlace` of the
+  Petri net mapper did exactly this.
 
 ### 6.4 Confirmation for large updates
 
@@ -922,13 +922,13 @@ return MessageBox.Show(
     + "Apply it?",
     "Update InstanceHierarchy", MessageBoxButton.OKCancel, MessageBoxImage.Warning) == MessageBoxResult.OK;
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:1133-1145`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `LargeUpdateConfirmed`)
 
 Count added and removed IDs, not element totals: the FPD plugin compares totals
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:423-430`), which misses a snapshot that removes
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `ConfirmLargeChangeIfNeeded`), which misses a snapshot that removes
 five elements and adds five different ones. Moves and renames must not ask. Default threshold 5, user
 configurable, persisted. The FPD plugin additionally warns when the pending snapshot is older than 30
-minutes (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:386-410`).
+minutes (`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `ConfirmPendingAgeIfNeeded`).
 
 ### 6.5 Dialogs pump the dispatcher
 
@@ -945,7 +945,7 @@ operation, dialogs included:
 // copy and silently clobber that external edit.
 _liveSyncSuppressed = true;
 ```
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:261-267`, reset in `finally` at `:375-383`)
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `UpdateButton_Click`, reset in its `finally`)
 
 The same applies to bridge messages arriving during a dialog: take the snapshot into a local variable at
 the start of the handler and do not re-read the field afterwards.
@@ -953,7 +953,7 @@ the start of the handler and do not re-read the field afterwards.
 A related open race in the Petri net plugin: `changed` is debounced by 300 ms, and clicking the WPF
 Update button can commit an in-progress label edit on the canvas whose `changed` arrives after the handler
 already wrote the older snapshot. `PtWebView.RequestExport` exists for this and has no caller yet
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs:186-191`). In a new plugin, make Update ask
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs`, `RequestExport`). In a new plugin, make Update ask
 the page for a fresh export and wait for it (with a timeout, as in 5.2) before writing.
 
 ### 6.6 Saving after Update
@@ -979,22 +979,22 @@ foreach (var name in CandidateProperties)   // SaveAMLCommand, SaveCommand, Save
     return true;
 }
 ```
-(condensed from `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/EditorSaver.cs:22-111`)
+(condensed from `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/EditorSaver.cs`, `CandidateProperties`, `TrySaveActiveDocument`)
 
 Facts and rules:
 
 - The reflection target resolves in the current editor: startup logs of both plugins show
   `MainViewModel.SaveAMLCommand resolved`.
 - `CanExecute == false` on the first candidate must not end the search; returning early there disabled
-  auto-save (`:65-74`).
+  auto-save (the `CanExecute` check in `TrySaveActiveDocument`).
 - Report "save command invoked", not "saved". `CanExecute` says nothing about whether the editor wrote.
 - The save command saves the **active** document, which may not be the one the plugin is bound to when
   several files are open. Neither plugin guards this yet. Before invoking, compare the bound document with
   the one discovery returns and skip the save (with a status message) when they differ.
 - Defaults differ, and both are defensible: the Petri net plugin saves by default because an unsaved
-  update is lost when the editor closes (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginSettings.cs:15-20`);
+  update is lost when the editor closes (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginSettings.cs`, `SaveAfterUpdate`);
   the FPD plugin does not, because a saved update cannot be undone by closing without saving
-  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/PluginSettings.cs:18`). Whatever the default, say in the
+  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/PluginSettings.cs`, `AutoSaveAfterUpdate`). Whatever the default, say in the
   status line which happened: "Saved." or "Press Ctrl+S to save."
 - New Net and Import also change the document; decide whether they save too, and be consistent.
 
@@ -1007,19 +1007,19 @@ the reflection path as fallback and log which one ran.
 
 `Aml.Engine` has no public change event. The FPD plugin polls: every 2 s, per hierarchy, SHA-256 over the
 hierarchy's XML; on a change it re-pushes the hierarchy to the canvas
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:655-716`, hash at `:742-759`). If the canvas has
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `StartLiveSync`, `LiveSyncTick`, hash in `ComputeIhHash`). If the canvas has
 pending edits at that moment, they are dropped, but first written to
 `%TEMP%\fpb-plugin\pending-backup\` with the path in the status line
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:689-703`, `:724-740`).
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `LiveSyncTick`, `TryWritePendingBackup`).
 
 Known limits of polling: hashing large hierarchies every 2 s on the UI thread causes micro stalls; a
 hierarchy deleted in the tree still hashes its detached XML, so the tab stays and Update writes into a
 detached tree; a new hierarchy added in the tree gets no tab. If the hash computation fails it must log,
 because returning an empty hash makes every later tick look unchanged
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:750-757`).
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, the catch block of `ComputeIhHash`).
 
 The Petri net plugin does not poll; the user presses **Refresh**, which asks before discarding pending
-edits (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:685-707`). Start there. Add polling
+edits (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `RefreshButton_Click`). Start there. Add polling
 only if users edit the same hierarchy in the tree while the canvas is open, and then include the backup.
 
 ---
@@ -1028,11 +1028,13 @@ only if users edit the same hierarchy in the tree while the canvas is open, and 
 
 ### 7.1 No commands on the editor toolbar; one menu per language
 
-The editor toolbar shows the `ToolBarCommands` of **one plugin at a time**. With both plugins installed,
-the FPD commands appeared inside the Petri net tab; with one plugin, New Process and Import appeared twice
-(on the toolbar and inside the view). Both plugins removed `IToolBarIntegration`
-(`AMLFPB.js` commit `a96fc36`, "no commands on the editor toolbar") and put occasional commands into one
-drop-down button inside their own view:
+The editor toolbar shows the `ToolBarCommands` of **one plugin at a time**. The FPD plugin puts New
+Process and Import FPB.js there (`ToolBarCommands` in the constructor `FpbPlugin` of
+`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`); with both plugins installed, those commands appeared inside the
+Petri net tab, and a plugin that also offers them inside its view shows them twice. The Petri net
+plugin does not implement `IToolBarIntegration` (its class declaration lists only `PluginViewBase`,
+`ISupportsThemes`, `INotifyAMLDocumentLoad`) and puts occasional commands into one drop-down button
+inside its own view:
 
 ```xml
 <Button x:Name="NetMenuButton" Click="NetMenuButton_Click" ToolTip="Create, import or export a Petri net.">
@@ -1052,13 +1054,14 @@ drop-down button inside their own view:
     </Button.ContextMenu>
 </Button>
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml:69-96`; opened below the button in code at
-`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:978-984`; FPD equivalent "Process ▾" at
-`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml:55-79`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`, `NetMenuButton`; opened below the button in
+`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `NetMenuButton_Click`; the FPD view instead has
+separate `ExportButton` and `ConformanceButton` buttons next to Update and Refresh in
+`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml`)
 
-Layout of the view toolbar, identical in both plugins so they read as one family: **Update** and
-**Refresh** as buttons of their own (used every session), a separator, the language menu, the picker
-(7.4), the findings button, the status line. Glyphs from `Segoe MDL2 Assets` next to short labels, in a
+Layout of the view toolbar that worked, and that keeps several language plugins reading as one
+family: **Update** and **Refresh** as buttons of their own (used every session), a separator, the
+language menu, the picker (7.4), the findings button, the status line. Glyphs from `Segoe MDL2 Assets` next to short labels, in a
 WPF `ToolBar` so overflow goes into the overflow menu instead of being cut off.
 
 If you still use `PluginCommand`: `CommandButtonContent` is a `FrameworkElement`, not a string, and a
@@ -1066,9 +1069,12 @@ command without content or icon rendered as an invisible empty button in earlier
 
 Commands that need a document use `RelayCommand<object>` from the contract with a `CanExecute` on the
 bound document, and call `CommandManager.InvalidateRequerySuggested()` whenever a document attaches or
-detaches (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:121-122`, `:394`). The empty
-placeholder offers the ways out of the empty state (New, Import) as buttons bound to the same command
-objects (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml:39-49`, `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:129-132`).
+detaches (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `NewNetItem.Command` in the constructor
+`PetriNetPlugin`, `InvalidateRequerySuggested` in `AttachDocument`). Let the empty
+placeholder offer the ways out of the empty state (New, Import) as buttons bound to the same command
+objects. Both source plugins show only text there (`NoDocumentPlaceholder` in
+`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`, pointing at the Net menu; `NoIhPlaceholder` in
+`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml`), so the user has to find the command elsewhere.
 
 ### 7.2 Status line
 
@@ -1083,18 +1089,18 @@ private void SetStatus(string text) =>
         if (StatusLabel != null) StatusLabel.Text = text;
     });
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:259-269`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `SetStatus`)
 
 On load, say what was loaded and what was repaired, for example
 `"Station 1: 6 places, 5 transitions, 12 arcs. 11 nodes had no layout and were arranged."`
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:495-497`).
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `PushToModeler`).
 
 ### 7.3 Findings list with element names, automatic validation
 
 Validate automatically on load, after Update and (count only) while the user draws; a Validate button
 that had to be remembered meant nets were usually shown unchecked
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:711-783`). Open the panel by itself only
-after a load or Update with errors, never while the user is drawing (`:780-781`).
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `Revalidate`). Open the panel by itself only
+after a load or Update with errors, never while the user is drawing (the `SetFindingsPanel` calls at the end of `Revalidate`).
 
 Show the element by the **name the canvas shows**, not by ID. Documents from other tools carry GUIDs, and
 a list of GUIDs says nothing:
@@ -1110,22 +1116,22 @@ string NameOf(string? id)
     return id;
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:735-743`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `NameOf` inside `Revalidate`)
 
 Double-click selects the element on the canvas via `selectElement`
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:843-847`). The ID sent must be the
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `FindingsGrid_MouseDoubleClick`). The ID sent must be the
 canvas ID: the FPD jump silently missed for every mapper-built element until CAEX braces were stripped
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/FindingRow.cs:41-44`). An unknown ID is a log line on the page,
-not an error (`AMLPetriNet: web/src/bridge.js:221-232`).
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/FindingRow.cs`, `FindingRow.From`). An unknown ID is a log line on the page,
+not an error (`AMLPetriNet: web/src/bridge.js`, the `selectElement` branch of the message listener).
 
 Clear findings whenever a different net is loaded or written; a stale finding that still selects an
-element is worse than none (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:795-809`).
+element is worse than none (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `ClearFindings`).
 Add "things the reader left off the canvas" as findings too, so a partially readable document is visible
-(`:745-749`).
+(the `Reading` rows in `Revalidate`).
 
 WPF detail: a `GridSplitter` resizes only a row with a concrete height; the findings row is sized in
-pixels and collapsed to 0 when hidden (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml:25-28`,
-`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:785-790`). An `Auto` row did not resize.
+pixels and collapsed to 0 when hidden (`FindingsRow` in `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`;
+`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `SetFindingsPanel`). An `Auto` row did not resize.
 
 ### 7.4 Picker for several hierarchies or diagrams
 
@@ -1133,9 +1139,9 @@ A document may hold several diagrams (one net per station, in hierarchies of the
 and mentioning the rest in the log left them in the document and out of reach. List every diagram of
 every matching hierarchy in a `ComboBox`, label `"<hierarchy> / <diagram>"` only when a hierarchy holds
 several, hide the picker when there is one
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:521-569`). Guard against the selector
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `RefreshNetChoices`). Guard against the selector
 reacting to its own repopulation (`_updatingNetSelector`), and ask before a switch discards pending edits,
-restoring the previous selection on cancel (`:575-605`).
+restoring the previous selection on cancel (`NetSelector_SelectionChanged`).
 
 ### 7.5 Several views: generation token against rebuild races
 
@@ -1160,15 +1166,15 @@ foreach (var ih in ihs)
         return;
     }
 ```
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:411-468`; `DocumentUnLoaded` bumps the token at `:308-310`)
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `RebuildTabsForDocumentInner`; `DocumentUnLoaded` bumps the token)
 
 Claim the token after the synchronous teardown, check it after every await, dispose the orphan view,
 and bump it on unload. Do not use a semaphore instead: a hung WebView2 init would never release it
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:39-47`). Fire-and-forget rebuilds must catch and log
-their own exceptions (`:351-374`), or they vanish in the unobserved task path.
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, comment of `_lastFullyRebuilt`). Fire-and-forget rebuilds must catch and log
+their own exceptions (`RebuildTabsForDocumentAsync`), or they vanish in the unobserved task path.
 
 After New Process or Import, rebuild against the document object the mapper returned, not the field: the
-editor may have swapped wrappers in the meantime (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:563-580`).
+editor may have swapped wrappers in the meantime (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `ExecuteNewProcess`).
 
 ### 7.6 Theme
 
@@ -1181,14 +1187,14 @@ public void OnThemeChanged(ApplicationTheme theme)
     else Dispatcher.Invoke(() => _bridge?.SendTheme(name));
 }
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:1077-1086`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `OnThemeChanged`)
 
 Contract 4.3.0 values: `Default`, `Office2010Blue`, `Office2013`, `Metro`, `RoyalLight`, `RoyalDark`,
 `MetroDark`, `NoTheme`. Map by substring, keep the last value in a field and resend it after every page
 boot (4.3). The page sets `data-theme` on `<html>` and styles canvas ground and chrome for dark; check
-label and arc contrast, which the Petri net audit found at about 1.4:1 on the dark ground. Leave WPF
-controls to the editor's `Aml.Skins` theme (no custom `TabControl` styles,
-`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml:23-26`).
+label and arc contrast, which was once measured at about 1.4:1 on the dark ground in the Petri net plugin. Leave WPF
+controls to the editor's `Aml.Skins` theme (no custom `TabControl` styles, see the comment on
+`IhTabs` in `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml`).
 
 ### 7.7 Settings in %APPDATA%
 
@@ -1197,47 +1203,49 @@ public static string FilePath => Path.Combine(
     Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
     "AutomationMLEditor", "PetriNetPlugin", "settings.json");
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginSettings.cs:38-40`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginSettings.cs`, `FilePath`)
 
 Small JSON with snake_case keys, defaults on missing or unreadable file (a preference is not worth an
-error dialog), best-effort save under a lock (`:42-74`). Petri net keys: `save_after_update`,
+error dialog), best-effort save under a lock (`Load`, `Save`). Petri net keys: `save_after_update`,
 `ask_before_large_updates`, `large_update_threshold`, `debug_logging`. FPD adds `run_vdi_validation`,
 `pending_age_warning_minutes`, `disabled_validation_rules`, `validation_min_severity`
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/PluginSettings.cs:17-44`). Expose the toggles on the
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/PluginSettings.cs`, the `JsonPropertyName` properties of `PluginSettings`). Expose the toggles on the
 "Status / Diagnostics" tab; after a numeric input, write the stored value back so a typo does not look
-accepted (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:1102-1115`). Load settings
+accepted (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `ThresholdInput_Changed`). Load settings
 before initialising logging if the debug toggle should affect startup output
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:79-84`).
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, start of the constructor `FpbPlugin`).
 
 ### 7.8 Logging and startup self-check
 
 `PluginLog` (identical in both plugins apart from names): one `StreamWriter` kept open with `AutoFlush`
 so a crash still leaves the tail on disk, `FileShare.Read` so the file can be tailed while the editor
 runs, rollover at 5 MB, `DEBUG` lines only when enabled, an `OnLine` event feeding the status tab
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginLog.cs:18-236`). Location:
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/PluginLog.cs`, `PluginLog`). Location:
 `%TEMP%\petrinet-plugin\petrinet-plugin-debug.log`, `%TEMP%\fpb-plugin\fpb-plugin-debug.log`. Put the path
 and an "Open log folder" button on the diagnostics tab
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml:239-254`). Bound the on-screen log to 500
-lines (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:1164-1182`).
+(`OpenLogFolderButton`, `LogFilePathLabel` in `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`). Bound the on-screen log to 500
+lines (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `OnDiagnosticsLine`).
 
 Log the plugin version first thing in the constructor
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:97-98`), then run a self-check that
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, constructor `PetriNetPlugin`), then run a self-check that
 names every assumption that would otherwise fail late and obscurely:
 
 - `System.Text.Json` round trip (not packed; the editor process provides it,
-  `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/StartupCheck.cs:32-54`)
-- web assets present (`:56-77`)
-- `Aml.Engine` and WebView2 versions (`:79-98`)
+  `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/StartupCheck.cs`, `CheckJson`)
+- web assets present (`CheckAssets`)
+- `Aml.Engine` and WebView2 versions (`CheckAssembly`)
 - contract members, theme enum, save command reflection path, mapper constants
-  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/ApiCompatCheck.cs:28-118`)
+  (`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/ApiCompatCheck.cs`, `CheckINotifyAMLDocumentLoad`, `CheckApplicationThemeEnum`,
+  `CheckEditorSaverReflectionPath`, `CheckSchemaConstantsResolve`)
 
 Run the reflection checks again in `Loaded`, when `MainWindow.DataContext` is populated, and show failures
-as a banner on the diagnostics tab (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:143-154`, `:707-727`).
+as a banner on the diagnostics tab (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, the `Loaded` handler in the constructor
+`FpbPlugin`, `UpdateCompatibilityBanner`).
 Keep the candidate name lists of the check and of `EditorSaver` identical, or the check reports false
-alarms (`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/ApiCompatCheck.cs:91-95`).
+alarms (`AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/ApiCompatCheck.cs`, `CheckEditorSaverReflectionPath`).
 
 Add a mapper trace callback and route it to `Debug` so one Update can be reconstructed from the log
-(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:298-305`).
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, the trace callback in `UpdateButton_Click`).
 
 ---
 
@@ -1250,20 +1258,20 @@ filter and a proposed file name, do the work in try/catch, log, status line.
   encoding; `ReadAllText` turned Latin-1 umlauts into replacement characters), takes **all** diagrams in
   the file (taking the first silently dropped the rest), arranges nodes without layout before writing so
   the document never holds geometry-free elements, and appends a new hierarchy with a unique name
-  (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:932-976`, `:1061-1073`). Errors go into
+  (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `ExecuteImportPnml`, `UniqueHierarchyName`). Errors go into
   a `MessageBox`, since the user just chose a file.
-- **New** appends an empty hierarchy, binds it and pushes it (`:909-930`). The FPD plugin asks for the
-  process name with a small input dialog (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs:542-589`).
+- **New** appends an empty hierarchy, binds it and pushes it (`ExecuteNewNet`). The FPD plugin asks for the
+  process name with a small input dialog (`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `ExecuteNewProcess`).
 - **Export** of the exchange format writes what is on screen if the user edited it, otherwise the selected
   diagram from the document prepared exactly like the canvas got it (ID normalisation, auto layout), so the
-  export never differs from the picture (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:878-905`,
-  `:1028-1059`).
+  export never differs from the picture (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `CurrentNet`,
+  `ExportButton_Click`).
 - **SVG export** asks the page to render (`requestSvg`, 10 s timeout) so the file shows the same layout the
-  canvas shows (`:986-1026`). Add a margin around diagram-js' `saveSVG` bounding box, which otherwise cuts
-  half a stroke and puts labels flush on the edge (`AMLPetriNet: web/src/svg.js:1-20`).
+  canvas shows (`ExportSvgButton_Click`). Add a margin around diagram-js' `saveSVG` bounding box, which otherwise cuts
+  half a stroke and puts labels flush on the edge (`AMLPetriNet: web/src/svg.js`, `exportSvg`).
 - **Conformance report** writes the findings of the net that is shown, kept from the last validation run
-  so the report matches the panel (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs:79-83`,
-  `:811-839`).
+  so the report matches the panel (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `_lastValidation`,
+  `SaveReportButton_Click`).
 
 Because the sandboxed page cannot save files, every download is done by the host from data the page
 returns. Do not implement downloads in the page.
@@ -1281,8 +1289,8 @@ returns. Do not implement downloads in the page.
 <BaseOutputPath>$(MSBuildThisFileDirectory)..\build\Plugins\$(MSBuildProjectName)</BaseOutputPath>
 <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:16-20`; the FPD csproj still
-uses `$(SolutionDir)` at `AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj:16`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj`, `BaseOutputPath`; the FPD csproj still
+uses `$(SolutionDir)` in its `BaseOutputPath`, `AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj`)
 
 Every build writes `build/Plugins/<Project>/<Configuration>/<Package>.<Version>.nupkg`. The PlugIn
 Manager installs from a local folder source pointing at that directory.
@@ -1305,8 +1313,8 @@ explicitly into `lib\<tfm>`:
       CopyToOutputDirectory="PreserveNewest" Visible="false"
       Pack="true" PackagePath="lib\$(TargetFramework)\WebView2Loader.dll" />
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:59-88`, staging target at
-`:104-110`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj`, the `ItemGroup` "DLLs bundled into the nupkg",
+staging target `StageWebView2Loader`)
 
 WebView2: `PackageReference` with `PrivateAssets=all` and `GeneratePathProperty="true"`, which exposes
 `$(PkgMicrosoft_Web_WebView2)`; pack `Core.dll`, `Wpf.dll`, `Core.winmd` from the package folder and the
@@ -1334,9 +1342,9 @@ what to run when the bundle is missing:
          Text="The modeler bundle is missing. Run 'npm install &amp;&amp; npm run build' in web\." />
 </Target>
 ```
-(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:90-102`)
+(`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj`, the `ItemGroup` "The modeler bundle, shipped as content", target `VerifyPtnJsDist`)
 
-Resulting package (AMLPetriNet 0.1.13, 17 entries): plugin DLL, `deps.json`, `runtimeconfig.json`,
+Resulting package (AMLPetriNet 0.1.14, 17 entries): plugin DLL, `deps.json`, `runtimeconfig.json`,
 mapper DLL, the four WebView2 files, `ptnjs-assets/index.html`, `ptnjs.css`, `ptnjs.esm.js`, `LICENSE`,
 `THIRD-PARTY-NOTICES.md`. Its nuspec lists `Aml.Editor.API`, `Aml.Engine`, `Aml.Skins` as dependencies with
 `exclude="Runtime,Build,Analyzers"`, and **no** contract dependency. List the nupkg after every packaging
@@ -1355,7 +1363,7 @@ disappeared from the editor without an error message. The README says so:
 > `Aml.Editor.Plugin.Contract.dll`. A second copy of that assembly makes the
 > editor ignore the plugin without an error message.
 
-(`AMLPetriNet: README.md:81-83`)
+(`AMLPetriNet: README.md`, section "Plugin")
 
 Rules: install through the PlugIn Manager from the nupkg. If you copy by hand (9.5), copy exactly the
 package's file list. If the plugin is missing after an install, check the plugin folder for
@@ -1388,8 +1396,8 @@ after another; the fix came only after listing every location and reading each f
 recommended a post-build copy there; it never worked.
 
 Do not hand-edit `PlugInManager6.xml` to register a plugin. The FPD project wrote a generator for it
-(`AMLFPB.js: GeneratePluginXml/Program.cs:7-114`) to reproduce the editor's serialization and its
-`RemoveAll(p => !p.IsInstalled)` filter (`:101-110`); the conclusion was that a hand-written state breaks
+(`AMLFPB.js: GeneratePluginXml/Program.cs`, a top-level program in five steps) to reproduce the editor's serialization and its
+`RemoveAll(p => !p.IsInstalled)` filter (step "STEP 4: Simulate editor's RemoveAll logic"); the conclusion was that a hand-written state breaks
 the manager, and the clean path is Uninstall and Install in the PlugIn Manager UI. Add a package source
 pointing at the `Release` folder once, through the UI.
 
@@ -1413,18 +1421,22 @@ one, restart the editor, delete the `.old` files. For anything you hand to someo
 
 - One version per release in three places: `<Version>` in the csproj (drives assembly and package
   version), `Metadata.xml`, and the git tag `v<version>`. CI builds the nupkg on the tag and attaches it to
-  the GitHub release (`AMLPetriNet: .github/workflows/ci.yml:70-77`, `AMLFPB.js: .github/workflows/build.yml:85-94`).
+  the GitHub release (step "Publish GitHub Release" in both `AMLPetriNet: .github/workflows/ci.yml` and
+  `AMLFPB.js: .github/workflows/build.yml`). AMLPetriNet publishes from a separate job `release`, the
+  only one with `contents: write`, which first checks that the tag matches the package version (same
+  file, step "Check that the tag matches the package version"). AMLFPB.js has no such check, so a tag
+  that disagrees with the csproj publishes the wrong version there.
 - Log `Assembly.GetName().Version.ToString(3)` at construction, so every log file says which build ran.
 - Clean `build/Plugins/<Project>/Release/` before packaging a release, or upload by exact file name.
 - Pin editor packages exactly (1.1) and treat a contract bump as a change that needs the contract tests and
   an editor run.
 - Keep the web bundle and the host in step: a host that expects `imported` with a baseline must tolerate an
   older cached page that sends none (the FPD host falls back to the timed window when the baseline is null,
-  `AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs:250-259`,
-  `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs:634-639`). Easier: version the bundle with the
+  `AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/FpbWebView.cs`, case `JsMessageType.Imported` in `OnWebMessage`;
+  `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`, `OnDiagramChangedFromJs`). Easier: version the bundle with the
   plugin and never mix.
 - `MinimumEditorVersion` 6.4.0.0 in both metadata files; the FPD README states AutomationML Editor 6.4.0 or
-  newer and the WebView2 runtime as requirements (`AMLFPB.js: README.md:20-22`).
+  newer and the WebView2 runtime as requirements (`AMLFPB.js: README.md`, section "Requirements").
 
 ---
 
@@ -1439,7 +1451,7 @@ and keep the rest small and logged.
    ```csharp
    [assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
    ```
-   (`AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/TestCollection.cs:1-5`)
+   (`AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/TestCollection.cs`, assembly attribute `CollectionBehavior`)
 2. **Bridge protocol in a real browser**: install a stand-in for `window.chrome.webview` before the page
    boots and drive the same messages the C# host sends:
    ```js
@@ -1456,18 +1468,20 @@ and keep the rest small and logged.
      window.__hostSend = (message) => listeners.forEach((h) => h({ data: message }));
    });
    ```
-   (`AMLPetriNet: web/tools/verify-bridge.mjs:30-43`). It checks: `ready` carries the URL; an import is
-   acknowledged with a baseline and raises no `changed` after the debounce window (`:78-83`); a user edit
-   is reported; two back-to-back imports report no edits (`:116-130`); simulation reports nothing and
+   (`AMLPetriNet: web/tools/verify-bridge.mjs`, the `page.addInitScript` stand-in for the host object). It checks: `ready` carries the URL; an import is
+   acknowledged with a baseline and raises no `changed` after the debounce window (check "an import raises no change
+   events of its own"); a user edit is reported; two back-to-back imports report no edits (check "back-to-back
+   imports report no edits"); simulation reports nothing and
    `requestExport` is refused during it; a broken import is an error and does not kill the modeler. Before
    this test the whole host-facing surface of the page was untested. The same test is the quickest way to
    check that a bundler change (minification) did not break the boot. The starter avoids the stand-in:
    `connectBridge(modeler, source)` returns its `handle` function, the page exposes it on `window.efl`,
    and `post` also dispatches an `efl-bridge-out` DOM event that the test records
-   (`starter/web/src/bridge.js:40-47`, `:166-171`; `starter/web/tools/harness.mjs:50-54`). Its six checks
+   (`starter/web/src/bridge.js`, `post`, `connectBridge`; `starter/web/tools/harness.mjs`, `run`). Its six checks
    cover `ready`, baseline without `changed`, one debounced change, two back-to-back imports, a broken
    import (an error and no `imported`), and the export, SVG and selection requests
-   (`starter/web/tools/verify-bridge.mjs:17-99`).
+   (`starter/web/tools/verify-bridge.mjs`, from "the page says it is ready" to "export, SVG and selection
+   requests are answered").
 3. **Contract drift by reflection**: the test project cannot reference the contract directly (the plugin's
    reference is `PrivateAssets`), so it touches the plugin type and finds the contract among the loaded
    assemblies:
@@ -1476,10 +1490,10 @@ and keep the rest small and logged.
    return AppDomain.CurrentDomain.GetAssemblies()
        .First(a => a.GetName().Name == "Aml.Editor.Plugin.Contract");
    ```
-   (`AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/ApiContractTests.cs:16-25`), then asserts the
+   (`AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/ApiContractTests.cs`, `ContractAssembly`), then asserts the
    `INotifyAMLDocumentLoad` members, Dark and Light names in `ApplicationTheme`, and `DisplayName` on the
    base type. Test projects need their own reference to the mapper project for the same reason
-   (`AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/Aml.Editor.Plugin.FPB.Tests.csproj:22-25`).
+   (the `ProjectReference` to `FpbMapper.Conversion.csproj` in `AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/Aml.Editor.Plugin.FPB.Tests.csproj`).
 4. **Runtime reflection targets** (save command, document discovery) cannot be tested offline: the editor
    ships as a single-file executable, so there is no assembly to reflect on in a test. Cover them with the
    startup self-check (7.8) and read the log after each editor update.
@@ -1493,7 +1507,7 @@ and keep the rest small and logged.
    `Aml.Editor.Plugin.Contract.dll`, no `Aml.Engine.dll`, the plugin DLL, mapper DLL, WebView2 files and
    bundle files present, `Metadata.xml` version equal to the csproj version, and `DisplayName` matching
    `^[A-Za-z_][A-Za-z0-9_]*$` in both `Metadata.xml` and the code
-   (`starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs:47-96`). Each of these failures is silent
+   (`starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs`, `PackageTests`). Each of these failures is silent
    inside the editor.
 7. **Manual editor script** before every release, in a clean profile: install from nupkg; open a document
    with no diagram (placeholder, New); open one with two diagrams (picker); edit, switch editor tabs,
@@ -1509,28 +1523,28 @@ and keep the rest small and logged.
 and `Aml.Editor.Plugin.Efl.Tests`. It follows the Petri net plugin's single-WebView design and leaves out
 the startup self-check, the conformance report and tree polling. Where it implements a rule:
 
-| Rule | Starter location |
-|---|---|
-| Packages pinned, contract `PrivateAssets`, WebView2 pinned exactly and packed, no `Aml.Skins` reference (§1.1, §9.2) | `starter/plugin/Aml.Editor.Plugin.Efl/Aml.Editor.Plugin.Efl.csproj:27-80` |
-| `BaseOutputPath` anchored at the project, bundle as content, build fails without the bundle (§9.1, §9.2) | same file `:19-24`, `:82-96` |
-| `Metadata.xml` in step with the csproj version (§1.4) | `starter/plugin/Aml.Editor.Plugin.Efl/Metadata.xml:1-10` |
-| `DisplayName`, bridge in the constructor, discovery in `Loaded`, no `Unloaded` handler (§1.3, §2.1, §2.2) | `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:59-98` |
-| `Ready` handler restores unsaved edits or rereads the document and resends the theme; content-based echo baseline; undone edits clear the pending model (§4.3, §5.3) | `EflPlugin.xaml.cs:126-186` |
-| `IsDocumentLoaded` never raised, new wrapper for the same file kept (`OriginID` plus `FileName`), UI-thread marshalling (§3.1, §3.2, §2.4) | `EflPlugin.xaml.cs:190-297` |
-| Hierarchy bound by ID with name fallback (§3.5) | `EflPlugin.xaml.cs:299-321` |
-| Picker, Refresh and switch ask before discarding (§7.4) | `EflPlugin.xaml.cs:359-426` |
-| Update through `EflUpdater.UpdateInPlace`, large-update confirmation by IDs, save as setting (§6.3, §6.4, §6.6) | `EflPlugin.xaml.cs:430-512` |
-| New Diagram, Import JSON (arranged before writing), Export JSON, Export SVG (§8) | `EflPlugin.xaml.cs:516-615` |
-| Automatic findings with element names, double-click selects (§7.3) | `EflPlugin.xaml.cs:619-662` |
-| Toolbar inside the view, findings row sized in pixels, Diagnostics tab with settings (§7.1, §7.3, §7.7) | `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml:20-100` |
-| WebView2 boot, virtual host `efl.local`, `ready`, buffers, reload on renderer failure, dispose (§4) | `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs:78-138`, `:140-172`, `:199-303` |
-| SVG as a request with a timeout (§5.2) | `ModelerView.cs:174-194` |
-| Message DTO and type constants (§5.1) | `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/BridgeMessage.cs:1-39` |
-| Document discovery and save command by reflection (§3.3, §6.6) | `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/EditorAccess.cs:32-100` |
-| Log under `%TEMP%\efl-plugin\`, settings under `%APPDATA%\AutomationMLEditor\EflPlugin\` (§7.7, §7.8) | `starter/plugin/Aml.Editor.Plugin.Efl/Diagnostics/PluginLog.cs`, `PluginSettings.cs` |
-| Package tests (§11) | `starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs:47-96` |
+| Rule | Starter file | Symbols |
+|---|---|---|
+| Packages pinned, contract `PrivateAssets`, WebView2 pinned exactly and packed, no `Aml.Skins` reference (§1.1, §9.2) | `starter/plugin/Aml.Editor.Plugin.Efl/Aml.Editor.Plugin.Efl.csproj` | the `PackageReference` items, the packed `None` items |
+| `BaseOutputPath` anchored at the project, bundle as content, build fails without the bundle (§9.1, §9.2) | same file | `BaseOutputPath`, `None Include="$(EflDistDir)\**\*"`, target `VerifyModelerBundle` |
+| `Metadata.xml` in step with the csproj version (§1.4) | `starter/plugin/Aml.Editor.Plugin.Efl/Metadata.xml` | `PlugInPackageMetaData` |
+| `DisplayName`, bridge in the constructor, discovery in `Loaded`, no `Unloaded` handler (§1.3, §2.1, §2.2) | `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` | constructor `EflPlugin` |
+| `Ready` handler restores unsaved edits or rereads the document and resends the theme; content-based echo baseline; undone edits clear the pending model (§4.3, §5.3) | `EflPlugin.xaml.cs` | `OnModelerReady`, `OnImported`, `OnChanged` |
+| `IsDocumentLoaded` never raised, new wrapper for the same file kept (`OriginID` plus `FileName`), UI-thread marshalling (§3.1, §3.2, §2.4) | `EflPlugin.xaml.cs` | `IsDocumentLoaded`, `DocumentLoaded`, `SameFile`, `DocumentUnLoaded`, `ApplicationClose`, `Attach` |
+| Hierarchy bound by ID with name fallback (§3.5) | `EflPlugin.xaml.cs` | `Bind`, `CurrentHierarchy` |
+| Picker, Refresh and switch ask before discarding (§7.4) | `EflPlugin.xaml.cs` | `FillPicker`, `DiagramPicker_SelectionChanged`, `RefreshButton_Click`, `DiscardPendingConfirmed` |
+| Update through `EflUpdater.UpdateInPlace`, large-update confirmation by IDs, save as setting (§6.3, §6.4, §6.6) | `EflPlugin.xaml.cs` | `UpdateButton_Click`, `LargeUpdateConfirmed` |
+| New Diagram, Import JSON (arranged before writing), Export JSON, Export SVG (§8) | `EflPlugin.xaml.cs` | `NewDiagram`, `ImportJson`, `AddToDocument`, `UniqueName`, `ExportJson_Click`, `ExportSvg_Click` |
+| Automatic findings with element names, double-click selects (§7.3) | `EflPlugin.xaml.cs` | `ShowFindings`, `ClearFindings`, `SetFindingsVisible`, `FindingsGrid_MouseDoubleClick` |
+| Toolbar inside the view, findings row sized in pixels, Diagnostics tab with settings (§7.1, §7.3, §7.7) | `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml` | the `ToolBar` with `DiagramMenuButton` and `DiagramPicker`, `FindingsRow`, the `TabItem` "Diagnostics" |
+| WebView2 boot, virtual host `efl.local`, `ready`, buffers, reload on renderer failure, dispose (§4) | `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs` | `InitAsync`, `ImportModel`, `SelectElement`, `SetTheme`, `OnMessage`, `Dispose` |
+| SVG as a request with a timeout (§5.2) | `ModelerView.cs` | `RequestSvgAsync` |
+| Message DTO and type constants (§5.1) | `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/BridgeMessage.cs` | `PageMessage`, `MessageType` |
+| Document discovery and save command by reflection (§3.3, §6.6) | `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/EditorAccess.cs` | `TryFindOpenDocument`, `FindDocument`, `TrySave` |
+| Log under `%TEMP%\efl-plugin\`, settings under `%APPDATA%\AutomationMLEditor\EflPlugin\` (§7.7, §7.8) | `starter/plugin/Aml.Editor.Plugin.Efl/Diagnostics/PluginLog.cs`, `PluginSettings.cs` | `PluginLog.LogDirectory`; `PluginSettings.FilePath` |
+| Package tests (§11) | `starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs` | `PackageTests` |
 
-The page side is `starter/web/src/bridge.js` (protocol at `:8-21`: `importModel`, `requestExport`,
+The page side is `starter/web/src/bridge.js` (protocol in its header comment: `importModel`, `requestExport`,
 `requestSvg`, `selectElement`, `setTheme`; `ready`, `imported` with `model` and `warnings`, `changed`,
 `svg`, `log`, `error`). Known gaps compared with this chapter: identity by `OriginID` and the bare
 `FileName` instead of the full path (§3.2), no fresh export before Update (§6.5), and no check that the
@@ -1606,27 +1620,27 @@ Packaging and release
 
 ## Where to look
 
-| Topic | File |
-|---|---|
-| Starting point for a new plugin (all of the above, condensed) | `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs`, `Bridge/ModelerView.cs`, `Bridge/EditorAccess.cs`, `Aml.Editor.Plugin.Efl.csproj` |
-| Package tests | `starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs` |
-| Page side of the starter bridge and its browser test | `starter/web/src/bridge.js`, `starter/web/tools/verify-bridge.mjs` |
-| Plugin view, lifecycle, update, UI (single WebView) | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs` |
-| Toolbar with language menu, picker, findings, diagnostics tab | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml` |
-| WebView2 wrapper: boot, virtual host, ready, buffers, crash handling, dispose | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs` |
-| Message DTO and type constants | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/BridgeMessage.cs` |
-| Page side of the bridge: debounce, import queue, baseline, simulation guard | `AMLPetriNet: web/src/bridge.js` |
-| Bridge test with a stand-in host | `AMLPetriNet: web/tools/verify-bridge.mjs` |
-| Document lookup by reflection | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/DocumentDiscoverer.cs` |
-| Editor save by reflection | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/EditorSaver.cs` |
-| Log, settings, startup check | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/` |
-| Packaging (WebView2 bundling, assets, output path) | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj` |
-| Bundle build, minification note | `AMLPetriNet: web/build.mjs` |
-| Multi-hierarchy tabs, rebuild token, pending cache, document dedupe | `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs` |
-| Per-hierarchy view: echo window history, live-sync poll, backups, large-update and stale checks, re-entrancy guards | `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs` |
-| Page with import map, cycle-breaking snapshot, rAF plus timeout settle | `AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html` |
-| Compatibility self-check and banner | `AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/ApiCompatCheck.cs` |
-| Contract drift tests | `AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/ApiContractTests.cs` |
-| Vendor patch target (react-dom import) | `AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj` |
-| PlugIn Manager state format (investigation tool) | `AMLFPB.js: GeneratePluginXml/Program.cs` |
-| CI: sibling checkouts, bundle build, nupkg release | `AMLFPB.js: .github/workflows/build.yml`, `AMLPetriNet: .github/workflows/ci.yml` |
+| Topic | File | Symbols |
+|---|---|---|
+| Starting point for a new plugin (all of the above, condensed) | `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs`, `Bridge/ModelerView.cs`, `Bridge/EditorAccess.cs`, `Aml.Editor.Plugin.Efl.csproj` | `EflPlugin`; `ModelerView`; `EditorAccess`; see the table in section 12 |
+| Package tests | `starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs` | `PackageTests` |
+| Page side of the starter bridge and its browser test | `starter/web/src/bridge.js`, `starter/web/tools/verify-bridge.mjs` | `connectBridge`, `post`, `installDiagnostics`; the checks passed to `run` |
+| Plugin view, lifecycle, update, UI (single WebView) | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs` | `PetriNetPlugin`, `DocumentLoaded`, `OnModelerReady`, `UpdateButton_Click`, `Revalidate` |
+| Toolbar with language menu, picker, findings, diagnostics tab | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml` | `NetMenuButton`, `FindingsRow`, `DebugToggle` |
+| WebView2 wrapper: boot, virtual host, ready, buffers, crash handling, dispose | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs` | `InitAsync`, `ImportPnml`, `OnWebMessage`, `FlushPending`, `Dispose` |
+| Message DTO and type constants | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/BridgeMessage.cs` | `JsToHostMessage`, `JsMessageType` |
+| Page side of the bridge: debounce, import queue, baseline, simulation guard | `AMLPetriNet: web/src/bridge.js` | `connectBridge`, `runImport`, `scheduleChange` |
+| Bridge test with a stand-in host | `AMLPetriNet: web/tools/verify-bridge.mjs` | the `page.addInitScript` stand-in and its `check` calls |
+| Document lookup by reflection | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/DocumentDiscoverer.cs` | `TryFindCurrentDocument` |
+| Editor save by reflection | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Bridge/EditorSaver.cs` | `TrySaveActiveDocument` |
+| Log, settings, startup check | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Diagnostics/` | `PluginLog`, `PluginSettings`, `StartupCheck` |
+| Packaging (WebView2 bundling, assets, output path) | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj` | `BaseOutputPath`, targets `StageWebView2Loader`, `VerifyPtnJsDist` |
+| Bundle build, minification note | `AMLPetriNet: web/build.mjs` | `shared` |
+| Multi-hierarchy tabs, rebuild token, pending cache, document dedupe | `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs` | `RebuildTabsForDocumentInner`, `_rebuildGeneration`, `CapturePendingSnapshotsToCache`, `IsAlreadyRebuilt` |
+| Per-hierarchy view: echo window history, live-sync poll, backups, large-update and stale checks, re-entrancy guards | `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs` | `EchoSuppressionWindow`, `LiveSyncTick`, `TryWritePendingBackup`, `ConfirmLargeChangeIfNeeded`, `ConfirmPendingAgeIfNeeded`, `UpdateButton_Click` |
+| Page with import map, cycle-breaking snapshot, rAF plus timeout settle | `AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html` | `safeSnapshot`, `settle` |
+| Compatibility self-check and banner | `AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/ApiCompatCheck.cs` | `ApiCompatCheck.Run` |
+| Contract drift tests | `AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/ApiContractTests.cs` | `ApiContractTests` |
+| Vendor patch target (react-dom import) | `AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj` | target `PatchVendorReactDom` |
+| PlugIn Manager state format (investigation tool) | `AMLFPB.js: GeneratePluginXml/Program.cs` | top-level program, steps 1 to 5 |
+| CI: sibling checkouts, bundle build, nupkg release | `AMLFPB.js: .github/workflows/build.yml`, `AMLPetriNet: .github/workflows/ci.yml` | steps "Checkout mapper", "Build FPB.JS dist", "Publish GitHub Release"; "Build the modeler bundle", "Publish GitHub Release" |

@@ -51,22 +51,23 @@ runs ASP.NET Core. The header comment of the PT app states the design:
 // Page and API are one app, so it runs on any host that runs ASP.NET Core, and
 // a reverse proxy can put it under a path of another site.
 ```
-(AMLPetriNet: dotnet/PtMapper.Web/Program.cs:1-6)
+(AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, header comment at the top of the file)
 
 The FPB variant splits the work: `server.js` serves `public/` and proxies `POST /api/:direction`
-to the .NET API (fpb-aml-mapper: server.js:46-47, server.js:101-133), and the .NET API carries
-its own CORS policy (fpb-aml-mapper: dotnet/FpbMapper.Web/Program.cs:5-18). Two deployables, two
-rate limiters, two body limits, and a header whitelist in the proxy that must be kept in step with
-the API (section 5). The newer project avoided all of that.
+to the .NET API (fpb-aml-mapper: `server.js`, the `express.static` call for the static frontend
+and the `app.post('/api/:direction', ...)` route), and the .NET API carries its own CORS policy
+(fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs`, `AddCors`). Two deployables, a rate limiter
+and a body limit that live only in the proxy while the API is reachable on its own, and a header
+whitelist in the proxy that must be kept in step with the API (section 5). The newer project avoided all of that.
 
 The web project references the conversion library exactly like the plugin:
 
-| Consumer | Reference |
-|---|---|
-| Web app | AMLPetriNet: dotnet/PtMapper.Web/PtMapper.Web.csproj:14 |
-| Plugin | AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:54 |
-| Web API (FPB) | fpb-aml-mapper: dotnet/FpbMapper.Web/FpbMapper.Web.csproj:8 |
-| Plugin (FPB) | AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj:51 |
+| Consumer | File | Symbol |
+|---|---|---|
+| Web app | AMLPetriNet: `dotnet/PtMapper.Web/PtMapper.Web.csproj` | `ProjectReference` to `PtMapper.Conversion.csproj` |
+| Plugin | AMLPetriNet: `Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj` | `ProjectReference` to `PtMapper.Conversion.csproj` |
+| Web API (FPB) | fpb-aml-mapper: `dotnet/FpbMapper.Web/FpbMapper.Web.csproj` | `ProjectReference` to `FpbMapper.Conversion.csproj` |
+| Plugin (FPB) | AMLFPB.js: `Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj` | `ProjectReference` to `FpbMapper.Conversion.csproj` |
 
 ## 2. The endpoint set
 
@@ -75,14 +76,14 @@ your exchange format (FPB uses `json`).
 
 | Endpoint | In | Out | PT reference |
 |---|---|---|---|
-| `POST /api/to-<format>` | AML document; `?hierarchy=` optional | exchange format; metadata header | Program.cs:108-158 |
-| `POST /api/update` | JSON `{aml, <format>, hierarchy}` | the *same* AML document, diagram written back | Program.cs:187-214 |
-| `POST /api/to-aml` | exchange format | a new AML document | Program.cs:162-183 |
-| `POST /api/validate` | AML or exchange format | JSON findings | Program.cs:217-238 |
-| `GET /api/library` | nothing | the domain library as a download | Program.cs:241-249 |
-| `GET /api/health` | nothing | status, library version, time, client address | Program.cs:251-260 |
+| `POST /api/to-<format>` | AML document; `?hierarchy=` optional | exchange format; metadata header | `MapPost("/api/to-pnml", ...)` |
+| `POST /api/update` | JSON `{aml, <format>, hierarchy}` | the *same* AML document, diagram written back | `MapPost("/api/update", ...)` |
+| `POST /api/to-aml` | exchange format | a new AML document | `MapPost("/api/to-aml", ...)` |
+| `POST /api/validate` | AML or exchange format | JSON findings | `MapPost("/api/validate", ...)` |
+| `GET /api/library` | nothing | the domain library as a download | `MapGet("/api/library", ...)` |
+| `GET /api/health` | nothing | status, library version, time, client address | `MapGet("/api/health", ...)` |
 
-(all AMLPetriNet: dotnet/PtMapper.Web/Program.cs)
+(all AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`)
 
 ### 2.1 `update` is the endpoint that matters
 
@@ -93,10 +94,12 @@ runs the same `UpdateInPlace` the plugin uses, and returns the whole document.
 **Why:** AML to exchange format to AML via `to-aml` produces a document that holds the diagram and
 nothing else. Foreign attributes, links into other hierarchies, externally referenced libraries
 and the document's own IDs are gone. The PT app says so explicitly (AMLPetriNet:
-dotnet/PtMapper.Web/Program.cs:8-13), and its browser test asserts that the downloaded file is the
-opened one, not a fresh one (AMLPetriNet: web/tools/verify-webapp.mjs:132-141). The FPB web app has
-only `to-aml` and `to-json` (fpb-aml-mapper: dotnet/FpbMapper.Web/Program.cs:24, :56), so a
-round trip through it is lossy by construction.
+`dotnet/PtMapper.Web/Program.cs`, header comment on `/api/update`), and its browser test asserts
+that the downloaded file is the opened one, not a fresh one (AMLPetriNet:
+`web/tools/verify-webapp.mjs`, checks "the saved document still carries its libraries" and "the
+saved document is the one that was opened"). The FPB web app has only `to-aml` and `to-json`
+(fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs`, `MapPost("/api/to-aml", ...)` and
+`MapPost("/api/to-json", ...)`), so a round trip through it is lossy by construction.
 
 ```csharp
 app.MapPost("/api/update", async (HttpContext ctx) => await Guarded(ctx, async () =>
@@ -119,15 +122,16 @@ app.MapPost("/api/update", async (HttpContext ctx) => await Guarded(ctx, async (
     await Text(ctx, "application/xml", Xml(doc));
 })).RequireRateLimiting(ApiPolicy);
 ```
-(AMLPetriNet: dotnet/PtMapper.Web/Program.cs:187-214)
+(AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, `MapPost("/api/update", ...)`)
 
 The JSON options set `PropertyNameCaseInsensitive = true` because the page sends camelCase and the
-request record is PascalCase (AMLPetriNet: dotnet/PtMapper.Web/Program.cs:354-358, :363).
+request record is PascalCase (AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, `Json.Options`,
+`UpdateRequest`).
 
 The page side keeps `source = { aml, name, hierarchy }` after opening and chooses `update` when a
-source exists, `to-aml` otherwise (AMLPetriNet: dotnet/PtMapper.Web/wwwroot/index.html:283,
-:445-481). A file opened directly in the exchange format has no source document, and the status
-line says that saving will create a new document (index.html:366).
+source exists, `to-aml` otherwise (AMLPetriNet: `dotnet/PtMapper.Web/wwwroot/index.html`, `source`,
+`saveAml`). A file opened directly in the exchange format has no source document, and the status
+line says that saving will create a new document (same file, `openText`).
 
 ### 2.2 Hierarchy selection
 
@@ -136,9 +140,11 @@ hierarchy that holds a diagram of your language and report which one was taken, 
 all candidate hierarchies, so the page can offer a selector.
 
 **Why:** real documents hold several instance hierarchies (plant, other views). Guessing silently
-leads to saves into the wrong one. See AMLPetriNet: dotnet/PtMapper.Web/Program.cs:113-121 and
-:139-141; the page fills a `<select>` only when there are two or more (index.html:418-436) and
-restores the previous value if switching fails (index.html:603-615).
+leads to saves into the wrong one. See AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`,
+`MapPost("/api/to-pnml", ...)` (the `hierarchy` query lookup and the `hierarchies` field of
+`X-Pt-Info`); the page fills a `<select>` only when there are two or more
+(`dotnet/PtMapper.Web/wwwroot/index.html`, `fillHierarchies`) and restores the previous value if
+switching fails (same file, the `change` listener on `hierarchy`).
 
 ### 2.3 SVG: export in the browser, not on the server
 
@@ -146,19 +152,21 @@ restores the previous value if switching fails (index.html:603-615).
 with the same function the plugin bridge uses.
 
 **Why:** the server has no renderer; only the modeler knows how shapes are drawn. The PT bundle
-exports `exportSvg` (AMLPetriNet: web/src/index.js:6), which pads diagram-js' tight bounding box so
-strokes and labels are not clipped (AMLPetriNet: web/src/svg.js:1-20). The plugin bridge answers an
-SVG request with the same function (AMLPetriNet: web/src/bridge.js:217), and the web page calls it
-directly (AMLPetriNet: dotnet/PtMapper.Web/wwwroot/index.html:495-505). There is no `/api/svg`,
-and there should not be.
+exports `exportSvg` (AMLPetriNet: `web/src/index.js`, the `export { exportSvg }` line), which pads
+diagram-js' tight bounding box so strokes and labels are not clipped (AMLPetriNet: `web/src/svg.js`,
+`exportSvg`). The plugin bridge answers an SVG request with the same function (AMLPetriNet:
+`web/src/bridge.js`, `connectBridge`, the `requestSvg` message), and the web page calls it
+directly (AMLPetriNet: `dotnet/PtMapper.Web/wwwroot/index.html`, `saveSvg`). There is no
+`/api/svg`, and there should not be.
 
 ### 2.4 Library download
 
 Serve the domain library built from code, not a copy that can drift: the PT app builds a
 fresh document, calls `EnsureLibraries`, and sets `Content-Disposition: attachment` (AMLPetriNet:
-dotnet/PtMapper.Web/Program.cs:241-249). The FPB page instead links static `.aml` copies from
-`public/` (fpb-aml-mapper: public/index.html:131-132), which must be replaced by hand at every
-library version bump.
+`dotnet/PtMapper.Web/Program.cs`, `MapGet("/api/library", ...)`). The FPB page instead links static
+`.aml` copies from `public/` (fpb-aml-mapper: `public/index.html`, the "Download FPD Library" and
+"Download DI Library" links in the page header), which must be replaced by hand at every library
+version bump.
 
 ## 3. Request size limits and rate limiting
 
@@ -170,32 +178,35 @@ address; return a JSON body and `Retry-After` on 429.
 const int MaxBodyBytes = 8 * 1024 * 1024;
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = MaxBodyBytes);
 ```
-(AMLPetriNet: dotnet/PtMapper.Web/Program.cs:24-27)
+(AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, `MaxBodyBytes`, `ConfigureKestrel`)
 
-**Why, with evidence:**
+**Why, with evidence** (all in AMLPetriNet: `dotnet/PtMapper.Web/Program.cs` unless named otherwise):
 
-- Without a cap a stray upload fills worker memory (comment at Program.cs:24-25).
+- Without a cap a stray upload fills worker memory (comment above `MaxBodyBytes`).
 - A body over the limit surfaces as `BadHttpRequestException` when the body is read; the PT error
-  wrapper maps it to 400 with a readable message (Program.cs:327-334).
+  wrapper maps it to 400 with a readable message (`Guarded`).
 - The limiter first partitioned on `RemoteIpAddress`, which behind a hosting front end is the front
   end's address. Everyone shared one bucket, and "fifteen page loads by anyone locked the site for
-  the rest of the minute" (Program.cs:29-33). The fix is `UseForwardedHeaders` with
-  `X-Forwarded-For` and `X-Forwarded-Proto` (Program.cs:34-39, :68), and the limit applies only to
-  API routes via `.RequireRateLimiting(ApiPolicy)`, because static files "were burning permits on
-  every load" (Program.cs:41-42).
+  the rest of the minute" (comment above `Configure<ForwardedHeadersOptions>`). The fix is
+  `UseForwardedHeaders` with `X-Forwarded-For` and `X-Forwarded-Proto` (`ForwardedHeadersOptions`,
+  `app.UseForwardedHeaders`), and the limit applies only to API routes via
+  `.RequireRateLimiting(ApiPolicy)`, because static files "were burning permits on every load"
+  (comment above `ApiPolicy`).
 - `KnownNetworks` and `KnownProxies` are cleared because the front end's addresses are not fixed
-  (Program.cs:37-38). That trusts `X-Forwarded-For` from any caller. It is acceptable only when the
-  app is reachable exclusively through a front end that overwrites the header. If your app is
-  directly reachable, list the proxy addresses instead.
+  (`ForwardedHeadersOptions`, `KnownNetworks.Clear`, `KnownProxies.Clear`). That trusts
+  `X-Forwarded-For` from any caller. It is acceptable only when the app is reachable exclusively
+  through a front end that overwrites the header. If your app is directly reachable, list the proxy
+  addresses instead.
 - The health endpoint echoes the address the limiter sees, so the forwarded-header setup can be
-  checked after every deploy (Program.cs:256-259).
+  checked after every deploy (`MapGet("/api/health", ...)`, the `client` field).
 - The rejection handler sets `Retry-After: 60` and writes `{ error }`, so the page can show a
-  sentence instead of "429" (Program.cs:56-63).
+  sentence instead of "429" (`AddRateLimiter`, `options.OnRejected`).
 
-When a proxy fronts the app, give the proxy the same body limit as the app. The FPB proxy caps its
-own API at 2 MB and the proxied PT app at 8 MB, with a comment tying the second number to the
-app's own limit (fpb-aml-mapper: server.js:18-19, :64-71). A proxy limit lower than the app's
-produces 413s that the app's logs never show.
+When a proxy fronts the app, give the proxy the same body limit as the app, and tie the two numbers
+together with a comment. The FPB proxy counts the body itself and answers 413 above its own
+`MAX_BODY_BYTES` of 2 MB before the .NET API sees the request (fpb-aml-mapper: `server.js`,
+`MAX_BODY_BYTES` and the body loop in the `app.post('/api/:direction', ...)` route). A proxy limit lower
+than the app's produces 413s that the app's logs never show.
 
 ## 4. Returning warnings, summaries and findings
 
@@ -206,8 +217,8 @@ that cannot be drawn, IDs that had to be adjusted, nodes that were auto-arranged
 
 - For endpoints whose body is a file (AML, exchange format), put a *small* JSON object into one
   custom response header (`X-<Lang>-Info`). Cap the lists: the PT app sends `warningCount` plus at
-  most five `warnings` (AMLPetriNet: dotnet/PtMapper.Web/Program.cs:149-154), because "a header
-  has to stay small".
+  most five `warnings` (AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, `MapPost("/api/to-pnml", ...)`,
+  the `warningCount` and `warnings` fields), because "a header has to stay small".
 - For validation, return a plain JSON body with one object per finding: `rule`, `severity`
   (lowercase string), `message`, `element` (the diagram ID, so the page can select it).
 - Serialize header values with `System.Text.Json` defaults. The default encoder escapes non-ASCII
@@ -233,41 +244,47 @@ ctx.Response.Headers["X-Pt-Info"] = JsonSerializer.Serialize(new
     warnings = net.Warnings.Take(5).ToArray(),
 });
 ```
-(AMLPetriNet: dotnet/PtMapper.Web/Program.cs:137-155, comments omitted)
+(AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, `MapPost("/api/to-pnml", ...)`, the `X-Pt-Info`
+header, comments omitted)
 
-`update` reports `added`, `updated`, `removed` and the updater's `notes` the same way (Program.cs:
-204-211), and the page turns them into the status line (index.html:461-465). Show warnings about
-elements that are not on the canvas explicitly: they remain in the document, and without a message
-the user believes they were lost (index.html:405-416).
+`update` reports `added`, `updated`, `removed` and the updater's `notes` the same way
+(`MapPost("/api/update", ...)`), and the page turns them into the status line
+(`dotnet/PtMapper.Web/wwwroot/index.html`, `saveAml`). Show warnings about elements that are not on
+the canvas explicitly: they remain in the document, and without a message the user believes they
+were lost (same file, `notShown`).
 
-`validate` accepts either format and sniffs it (`LooksLikeAml` checks for `CAEXFile`,
-Program.cs:220-223, :310-311). The page renders findings as a table whose rows select and scroll to
-the element (index.html:537-579), and escapes every value before putting it into `innerHTML`
-(index.html:581-582); finding messages contain element names from user files.
+`validate` accepts either format and sniffs it (`LooksLikeAml` checks for `CAEXFile`; Program.cs,
+`MapPost("/api/validate", ...)`, `LooksLikeAml`). The page renders findings as a table whose rows
+select and scroll to the element (index.html, `renderFindings`, `select`), and escapes every value
+before putting it into `innerHTML` (index.html, `escape`); finding messages contain element names
+from user files.
 
 **Error wrapper.** The PT app funnels every endpoint through one `Guarded` function
-(AMLPetriNet: dotnet/PtMapper.Web/Program.cs:317-345): a `BadRequest` exception type for messages
-that are safe to show; `XmlException`, `InvalidOperationException`, `ArgumentException`,
+(AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, `Guarded`): a `BadRequest` exception type for
+messages that are safe to show; `XmlException`, `InvalidOperationException`, `ArgumentException`,
 `FormatException`, `JsonException` and `BadHttpRequestException` become 400 "This file could not
-be read"; anything else is logged and returned as 500. `Fail` checks `Response.HasStarted`
-(Program.cs:347-352). Compare the FPB API, which maps every exception, including server bugs, to
-400 and logs nothing (fpb-aml-mapper: dotnet/FpbMapper.Web/Program.cs:47-52, :70-75): a real
-defect then looks like bad user input and leaves no trace on the server.
+be read"; anything else is logged and returned as 500. `Fail` checks `Response.HasStarted` (same
+file, `Fail`). Compare the FPB API, which maps every exception, including server bugs, to 400 and
+logs nothing (fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs`, the `catch (Exception ex)` blocks
+of `MapPost("/api/to-aml", ...)` and `MapPost("/api/to-json", ...)`): a real defect then looks like
+bad user input and leaves no trace on the server.
 
 **Load AML through one helper.** The PT app calls `CAEXDocument.LoadFromString` directly
-(AMLPetriNet: dotnet/PtMapper.Web/Program.cs:111, :195, :221). For some non-AML input Aml.Engine
-returns a document whose `CAEXFile` is null instead of throwing; the NullReferenceException that
-follows is not in the wrapper's list of input errors, so a web API reported the caller's broken file
-as a 500. The starter's
-`EflDocuments.Load` turns that into a `FormatException` (`starter/dotnet/Efl.Conversion/EflDocuments.cs:10-36`),
-every endpoint of its web app loads through it (`starter/dotnet/Efl.Web/Program.cs:43`, `:90`, `:111`),
-and its browser test asserts that a broken file is a 400 with a message
-(`starter/web/tools/verify-webapp.mjs:107-111`).
+(AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, in `MapPost("/api/to-pnml", ...)`,
+`MapPost("/api/update", ...)` and `MapPost("/api/validate", ...)`). For some non-AML input
+Aml.Engine returns a document whose `CAEXFile` is null instead of throwing; the
+NullReferenceException that follows is not in the wrapper's list of input errors, so a web API
+reported the caller's broken file as a 500. The starter's `EflDocuments.Load` turns that into a
+`FormatException` (`starter/dotnet/Efl.Conversion/EflDocuments.cs`, `Load`), every endpoint of its
+web app loads through it (`starter/dotnet/Efl.Web/Program.cs`, `MapPost("/api/to-json", ...)`,
+`MapPost("/api/update", ...)`, `MapPost("/api/validate", ...)`), and its browser test asserts that
+a broken file is a 400 with a message (`starter/web/tools/verify-webapp.mjs`, check "a broken file
+is a 400 with a message, not a 500").
 
 **Metadata headers across origins.** A custom header is invisible to `fetch` on a cross-origin call
 unless the API lists it in `Access-Control-Expose-Headers`; the FPB API does so with
-`WithExposedHeaders("X-Conversion-Warnings")` (fpb-aml-mapper: dotnet/FpbMapper.Web/Program.cs:17).
-A proxy drops it unless it copies it: see section 5.
+`WithExposedHeaders("X-Conversion-Warnings")` (fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs`,
+`AddCors`, `WithExposedHeaders`). A proxy drops it unless it copies it: see section 5.
 
 ## 5. CORS, same origin, and running behind a reverse proxy
 
@@ -275,38 +292,44 @@ A proxy drops it unless it copies it: see section 5.
 page on a different origin must call the API directly.
 
 The FPB API has a CORS policy that allows the project's domains and `localhost`
-(fpb-aml-mapper: dotnet/FpbMapper.Web/Program.cs:5-18), yet the FPB page calls the relative path
-`/api/${direction}` on its own origin (fpb-aml-mapper: public/index.html:289-293), and the proxy
-calls the API server to server, where CORS does not apply. The policy therefore protects nothing in
-the deployed setup and only matters for direct browser calls. If you do write an origin predicate,
-use `Uri.TryCreate`: `new Uri(origin)` throws on the literal origin `null` that sandboxed frames and
-`file:` pages send.
+(fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs`, `AddCors`, `SetIsOriginAllowed`), yet the FPB
+page calls the relative path `/api/${direction}` on its own origin (fpb-aml-mapper:
+`public/index.html`, `convert`), and the proxy calls the API server to server, where CORS does not
+apply. The policy therefore protects nothing in the deployed setup and only matters for direct
+browser calls. If you do write an origin predicate, use `Uri.TryCreate`: `new Uri(origin)` throws
+on the literal origin `null` that sandboxed frames and `file:` pages send.
 
-When a proxy puts the app under a path of another site (the FPB host serves the PT app under
-`/pt`), four things broke or had to be handled:
+When a proxy puts the app under a path of another site (for example a Node proxy that serves the
+PT app under `/pt` next to its own pages), four things have to be handled:
 
 1. **Relative URLs in the page.** An absolute `fetch('/api/...')` resolves against the root of the
    proxy host, not the app. The PT page uses `./api/...` throughout, with the reason in a comment
-   (AMLPetriNet: dotnet/PtMapper.Web/wwwroot/index.html:316-332, :379, :451, :517), and loads its
-   bundle as `./ptnjs.esm.js` (index.html:273). The library link is `./api/library`
-   (index.html:269).
+   (AMLPetriNet: `dotnet/PtMapper.Web/wwwroot/index.html`, the comment on `call`, and the requests
+   in `openAml`, `saveAml` and `validate`), and loads its bundle as `./ptnjs.esm.js` (same file,
+   the `import` in the module script). The library link is `./api/library` (same file, the link in
+   the `<footer>`).
 2. **Trailing slash redirect.** `/pt` without a slash makes the browser resolve `./ptnjs.esm.js`
-   against the root. The proxy redirects `/pt` to `/pt/` inside the middleware, not as a separate
-   route, because Express treats `/pt` and `/pt/` as the same path without strict routing and a
-   second route loops (fpb-aml-mapper: server.js:55-59).
-3. **Forwarded client address.** The proxy sets `x-forwarded-for` and `x-forwarded-proto`, so the
-   app's limiter partitions on the caller (fpb-aml-mapper: server.js:77-79).
-4. **Header whitelist.** The proxy copies an explicit list of response headers:
-   `content-type`, `cache-control`, `content-disposition`, the app's info headers, `retry-after`
-   and `location` (fpb-aml-mapper: server.js:88-92). Every new metadata header in the app must be
-   added there, or the page silently loses warnings. It passes redirects through unchanged with
-   `redirect: 'manual'` (server.js:85) and answers 502 with `{ error }` when the app is down
-   (server.js:96-98).
+   against the root. Redirect `/pt` to `/pt/` inside the prefix middleware, not as a separate
+   route: Express treats `/pt` and `/pt/` as the same path without strict routing, and a second
+   route loops.
+3. **Forwarded client address.** Set `x-forwarded-for` and `x-forwarded-proto` on the forwarded
+   request, so the app's limiter partitions on the caller (section 3). The FPB proxy forwards to
+   its API with only a `Content-Type` header, so the API sees the proxy's address for every caller
+   (fpb-aml-mapper: `server.js`, the `fetch` call in `app.post('/api/:direction', ...)`); it rate
+   limits in the proxy instead (`rateLimit`).
+4. **Header whitelist.** A proxy copies only the response headers it names. The FPB proxy copies
+   `X-Conversion-Warnings` and the content type, nothing else (fpb-aml-mapper: `server.js`, the
+   `res.set` and `.type` calls in `app.post('/api/:direction', ...)`). Every new metadata header in
+   the app must be added to such a list, or the page silently loses warnings. For a whole-app
+   pass-through, copy `content-type`, `cache-control`, `content-disposition`, the app's info
+   headers, `retry-after` and `location`, pass redirects through unchanged with
+   `redirect: 'manual'`, and answer 502 with `{ error }` when the app is down, as the FPB proxy does
+   for its API (same route, the `catch` block).
 
-The proxy passes requests through whole rather than rewriting parts, "so rewriting parts of it
-would only break the relative paths in its HTML" (fpb-aml-mapper: server.js:51-53). The FPB API
-proxy, in contrast, whitelists the two known directions and rejects anything else
-(server.js:103-105); with a whole-app pass-through that list does not need maintenance.
+Pass a whole app through unchanged rather than rewriting parts of it: rewriting would break the
+relative paths in its HTML. The FPB API proxy, in contrast, whitelists the two known directions and
+rejects anything else (`server.js`, `app.post('/api/:direction', ...)`); with a whole-app
+pass-through that list does not need maintenance.
 
 ## 6. Static files: the page, the bundle, example files
 
@@ -331,44 +354,49 @@ proxy, in contrast, whitelists the two known directions and rejects anything els
   ...
 </Target>
 ```
-(AMLPetriNet: dotnet/PtMapper.Web/PtMapper.Web.csproj:26-38)
+(AMLPetriNet: `dotnet/PtMapper.Web/PtMapper.Web.csproj`, target `StageWebAssets`)
 
 **Why:**
 
 - **Copy, not Link.** Linked content items end up in a publish but not in the content root that
-  `dotnet run` serves, so the local page "would silently lose the modeler" (PtMapper.Web.csproj:
-  21-25). The plugin, which loads from its output folder, uses `Link` instead (AMLPetriNet:
-  Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:92-96). Same source directory
-  (`web/dist`, csproj:23 and PtMapper.Web.csproj:18), different MSBuild item style.
-- **Staged copies gitignored** (AMLPetriNet: .gitignore:10-13), so the repository never holds a
-  stale bundle.
+  `dotnet run` serves, so the local page "would silently lose the modeler" (PtMapper.Web.csproj,
+  comment above `StageWebAssets`). The plugin, which loads from its output folder, uses `Link`
+  instead (AMLPetriNet: `Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj`, the `None`
+  item with `Link="ptnjs-assets\..."`). Same source directory (`web/dist`, property `PtnJsDistDir`
+  in both project files), different MSBuild item style.
+- **Staged copies gitignored** (AMLPetriNet: `.gitignore`, section "Staged into the web project by
+  its build"), so the repository never holds a stale bundle.
 - **MIME types.** `.aml` and `.pnml` are not in the default table; StaticFiles does not serve
   unknown extensions, so the example document came back as 404 (AMLPetriNet:
-  dotnet/PtMapper.Web/Program.cs:87-91).
+  `dotnet/PtMapper.Web/Program.cs`, `FileExtensionContentTypeProvider`, `contentTypes.Mappings`).
 - **no-cache.** Bundle and page keep their names across deploys; a cached copy leaves a visitor on
-  the old modeler with no way to tell (Program.cs:95-101). If you add content hashes to file names,
-  you can cache the bundle and keep `no-cache` only on the HTML.
+  the old modeler with no way to tell (Program.cs, `UseStaticFiles`, `OnPrepareResponse`). If you
+  add content hashes to file names, you can cache the bundle and keep `no-cache` only on the HTML.
 - **nosniff.** The app returns user-supplied XML as downloads; content sniffing is the one way a
-  file could be interpreted as script (Program.cs:75-82).
+  file could be interpreted as script (Program.cs, the `app.Use` middleware that sets
+  `X-Content-Type-Options`).
 - **HSTS only outside Development**, so a developer's browser is not pinned to https on localhost
-  (Program.cs:70-73).
+  (Program.cs, `UseHsts`).
 
 **The bundle must boot without the host.** The web page imports the bundle as an ES module and
 creates the modeler directly, without `connectBridge` (AMLPetriNet:
-dotnet/PtMapper.Web/wwwroot/index.html:272-273, :588-595). This works because every call into the
-WebView2 host is guarded with optional chaining (`window.chrome?.webview?.postMessage`, AMLPetriNet:
-web/src/bridge.js:46-52). Write your bridge the same way, and keep the web page off the bridge so
-that web changes carry no risk for the plugin. The bundle must also not fetch anything from a CDN
-at runtime (AMLPetriNet: web/build.mjs:1-6); the plugin runs offline and the web page benefits from
-the same property. The page exposes `window.ptn` and `window.ptnReady` for browser tests
-(index.html:590-591) and shows boot failures in a visible element via `showFatal`
-(index.html:249-250, :592-594) instead of leaving an empty canvas.
+`dotnet/PtMapper.Web/wwwroot/index.html`, the module script's `import` and the
+`createPetriNetModeler` call). This works because every call into the WebView2 host is guarded
+with optional chaining (`window.chrome?.webview?.postMessage`, AMLPetriNet: `web/src/bridge.js`,
+`post`). Write your bridge the same way, and keep the web page off the bridge so that web changes
+carry no risk for the plugin. The bundle must also not fetch anything from a CDN at runtime
+(AMLPetriNet: `web/build.mjs`, header comment); the plugin runs offline and the web page benefits
+from the same property. The page exposes `window.ptn` and `window.ptnReady` for browser tests
+(index.html, after `createPetriNetModeler`) and shows boot failures in a visible element via
+`showFatal` (index.html, the `boot-error` element and the `catch` around `createPetriNetModeler`)
+instead of leaving an empty canvas.
 
 For FPB, the modeler web app itself is a separate deployment that serves the released npm
-package's `dist/` (FPB.JS: package.json:15-16), published from CI on a version tag (FPB.JS:
-.github/workflows/release.yml:25). Serving the tarball's build rather than a local build matters:
-a local build with a different Node version yields a different bundle hash, and at one point a
-hand-copied development build stayed live for months.
+package's `dist/` (FPB.JS: `package.json`, `files`), published from CI on a version tag (FPB.JS:
+`.github/workflows/release.yml`, the `on.push.tags` trigger and the `npm publish --access public`
+step). Serving the tarball's build rather than a local build matters: a local build with a
+different Node version yields a different bundle hash, and at one point a hand-copied development
+build stayed live for months.
 
 ## 7. Downloads from the browser
 
@@ -387,35 +415,38 @@ function download(text, name, type) {
   setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 ```
-(AMLPetriNet: dotnet/PtMapper.Web/wwwroot/index.html:340-350)
+(AMLPetriNet: `dotnet/PtMapper.Web/wwwroot/index.html`, `download`)
 
 **Do:** append the anchor before clicking, revoke the object URL later, and derive the file name
-from the opened file (`source.name` with the extension replaced, index.html:459, :487, :499).
-The FPB page revokes the URL immediately after `click()` and never attaches the anchor
-(fpb-aml-mapper: public/index.html:335-347), which is the pattern the PT comment warns about.
+from the opened file (`source.name` with the extension replaced; index.html, `saveAml`, `savePnml`,
+`saveSvg`). The FPB page revokes the URL immediately after `click()` and never attaches the anchor
+(fpb-aml-mapper: `public/index.html`, `downloadOutput`), which is the pattern the PT comment warns
+about.
 
 **Server-side names.** When the API itself names a file, sanitize: take `Path.GetFileName`, fall
-back when empty or longer than 120 characters (AMLPetriNet: dotnet/PtMapper.Web/Program.cs:
-300-308). Never build a path from a query parameter.
+back when empty or longer than 120 characters (AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`,
+`FileName`). Never build a path from a query parameter.
 
 **Serialize to a stream, not a temp file.** The PT app writes the document with
-`doc.SaveToStream(prettyPrint: true)` (Program.cs:292-298). The FPB API saves to
-`Path.GetTempFileName()` and reads the file back (fpb-aml-mapper: dotnet/FpbMapper.Web/Program.cs:
-32-45). That costs disk I/O per request and, since Aml.Engine places the CAEX schema file next to
-any file it saves (AMLPetriNet: .gitignore:19-20), leaves schema copies in the server's temp
-directory. The starter keeps both directions in one place: `EflDocuments.ToXml` writes through
-`SaveToStream`, and `LoadFile`/`SaveFile` go through text for the same reason
-(`starter/dotnet/Efl.Conversion/EflDocuments.cs:38-58`).
+`doc.SaveToStream(prettyPrint: true)` (Program.cs, `Xml`). The FPB API saves to
+`Path.GetTempFileName()` and reads the file back (fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs`,
+`MapPost("/api/to-aml", ...)`). That costs disk I/O per request and, since Aml.Engine places the
+CAEX schema file next to any file it saves (AMLPetriNet: `.gitignore`, the
+`**/CAEX_ClassModel_V.3.0.xsd` entry), leaves schema copies in the server's temp directory. The
+starter keeps both directions in one place: `EflDocuments.ToXml` writes through `SaveToStream`, and
+`LoadFile`/`SaveFile` go through text for the same reason
+(`starter/dotnet/Efl.Conversion/EflDocuments.cs`, `ToXml`, `LoadFile`, `SaveFile`).
 
 **Concurrency in the page.** Disable buttons while a request runs *and* guard non-button inputs
 (file picker, drag and drop, hierarchy select) with a `working` flag; otherwise a second file can
 be opened while the first is converting and the late answer overwrites the newer canvas
-(AMLPetriNet: dotnet/PtMapper.Web/wwwroot/index.html:286-314, :597-601, :650-656).
+(AMLPetriNet: `dotnet/PtMapper.Web/wwwroot/index.html`, `working`, `busy`, `idle`, and the `change`
+listener on `file` and the `drop` listener on `window`).
 
 **Testing downloads.** Headless Chromium reports blob downloads as canceled. The PT browser test
 wraps `URL.createObjectURL`, records the entry synchronously, and reads the blob's text, then
-asserts on content (AMLPetriNet: web/tools/verify-webapp.mjs:38-76). See
-[07-testing-and-ci.md](07-testing-and-ci.md).
+asserts on content (AMLPetriNet: `web/tools/verify-webapp.mjs`, the `page.addInitScript` call and
+`saves`). See [07-testing-and-ci.md](07-testing-and-ci.md).
 
 ## 8. Health check
 
@@ -434,15 +465,15 @@ app.MapGet("/api/health", (HttpContext ctx) => Results.Ok(new
     client = ctx.Connection.RemoteIpAddress?.ToString(),
 }));
 ```
-(AMLPetriNet: dotnet/PtMapper.Web/Program.cs:251-260, comment omitted)
+(AMLPetriNet: `dotnet/PtMapper.Web/Program.cs`, `MapGet("/api/health", ...)`, comment omitted)
 
 **Why:** the library version comes from the same constant the mapper stamps into the libraries it
-writes (AMLPetriNet: dotnet/PtMapper.Conversion/PtNames.cs:14), so it cannot disagree with
-what the endpoints produce. The FPB API has no health endpoint; after a deploy the only check was a
-real conversion request with curl against `/api/to-aml`. Use the health endpoint for three things:
-the host's health probe, a post-deploy smoke test, and warming the app before a demo. Low-cost
-hosting plans unload idle apps, and the first request after that pays the full .NET and Aml.Engine
-start-up.
+writes (AMLPetriNet: `dotnet/PtMapper.Conversion/PtNames.cs`, `PtNames.LibraryVersion`), so it
+cannot disagree with what the endpoints produce. The FPB API has no health endpoint; after a deploy
+the only check was a real conversion request with curl against `/api/to-aml`. Use the health
+endpoint for three things: the host's health probe, a post-deploy smoke test, and warming the app
+before a demo. Low-cost hosting plans unload idle apps, and the first request after that pays the
+full .NET and Aml.Engine start-up.
 
 ## 9. Deployment as a generic pattern
 
@@ -466,24 +497,28 @@ curl https://<your-host>/api/health
 node web/tools/verify-webapp.mjs https://<your-host>/
 ```
 
-References: fpb-aml-mapper: README.md:34-39 (publish, zip, zip deploy); AMLPetriNet: README.md:85-94
-(bundle build, then `dotnet run`); the browser test takes a base URL (AMLPetriNet:
-web/tools/verify-webapp.mjs:10, :18) and was run against the live instance.
+References: fpb-aml-mapper: `README.md`, section "Deploy to Azure" (publish, zip, zip deploy);
+AMLPetriNet: `README.md`, section "Web application" (bundle build, then `dotnet run`); the browser
+test takes a base URL (AMLPetriNet: `web/tools/verify-webapp.mjs`, the usage comment and `base`)
+and was run against the live instance.
 
 Notes from the source projects:
 
 - **Gitignore the artefacts.** `publish/` and `deploy.zip` are ignored in both repositories
-  (AMLPetriNet: .gitignore:15-17; fpb-aml-mapper: .gitignore:12-13).
+  (AMLPetriNet: `.gitignore`, section "Made by the deploy commands in the README"; fpb-aml-mapper:
+  `.gitignore`, entries `dotnet/publish/` and `dotnet/deploy.zip`).
 - **Check the worker's bitness.** The PT web project keeps `PlatformTarget` at `AnyCPU` because the
-  host plan runs a 32-bit worker (AMLPetriNet: dotnet/PtMapper.Web/PtMapper.Web.csproj:9-10). A
-  project forced to x64 fails to start on such a worker.
+  host plan runs a 32-bit worker (AMLPetriNet: `dotnet/PtMapper.Web/PtMapper.Web.csproj`,
+  `PlatformTarget` and the comment above it). A project forced to x64 fails to start on such a
+  worker.
 - **Aml.Engine is managed code.** Framework-dependent publish on a host with the ASP.NET Core
   runtime is enough; no native dependency needs installing.
 - **Build the web project in CI** even if you deploy by hand. The PT solution contains
   `PtMapper.Web` and CI builds the bundle before the solution, so a web project broken by a mapper
-  API change fails the build (AMLPetriNet: .github/workflows/ci.yml:31-42). The FPB mapper
-  solution also contains its web project (fpb-aml-mapper: dotnet/FpbMapper.sln:8) and its CI builds
-  the whole `dotnet/` folder.
+  API change fails the build (AMLPetriNet: `.github/workflows/ci.yml`, steps "Build the modeler
+  bundle" and "Build"). The FPB mapper solution also contains its web project (fpb-aml-mapper:
+  `dotnet/FpbMapper.sln`, project entry `FpbMapper.Web`) and its CI builds the whole `dotnet/`
+  folder.
 - **Use HTTPS only** at the host, and keep HSTS in the app for non-development environments.
 
 ## 10. Keeping web app and plugin on the same mapper version
@@ -497,19 +532,21 @@ update-in-place in one tool can duplicate elements written by the other.
 1. **One conversion project, referenced by both** (table in section 1). Never copy mapper code into
    the web project. The PT app keeps plugin, mapper, CLI, tests and web in one solution and one
    repository; the FPB plugin references the mapper project from a sibling checkout
-   (AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj:51), which works but means the
-   plugin release and the web deploy are two independent actions on two repositories.
+   (AMLFPB.js: `Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj`, `ProjectReference` to
+   `FpbMapper.Conversion.csproj`), which works but means the plugin release and the web deploy are
+   two independent actions on two repositories.
 2. **One modeler bundle, consumed by both** (section 6). The PT plugin and web both read `web/dist`
-   (AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj:23,
-   dotnet/PtMapper.Web/PtMapper.Web.csproj:18). The FPB plugin reads FPB.JS's `dist`
-   (AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj:20, :98, :122-123).
+   (AMLPetriNet: `Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj` and
+   `dotnet/PtMapper.Web/PtMapper.Web.csproj`, property `PtnJsDistDir` in each). The FPB plugin reads
+   FPB.JS's `dist` (AMLFPB.js: `Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj`, property
+   `FpbJsDistDir`, the `None` items linked into `fpbjs-assets`, target `VerifyFpbJsDist`).
 3. **Redeploy the web app whenever you release the plugin**, from the same commit. Make it a step
    of the release checklist; in the source projects, web deploys happened by hand after mapper
    commits and were tracked in notes, which is how drift goes unnoticed.
 4. **Make the version observable on both sides.** Return library and mapper versions from
    `/api/health`; log the same values in the plugin at start-up. Stamp written documents with
    the library version (the PT mapper sets `OriginVersion` from `PtNames.LibraryVersion`,
-   AMLPetriNet: dotnet/PtMapper.Conversion/PtNetToCaex.cs:41).
+   AMLPetriNet: `dotnet/PtMapper.Conversion/PtNetToCaex.cs`, `Convert`).
 5. **Run the same round-trip checks against the deployed web app** that you run against the mapper
    in tests (browser test with base URL, section 9).
 
@@ -518,24 +555,25 @@ update-in-place in one tool can duplicate elements written by the other.
 `starter/dotnet/Efl.Web` is the smallest form of this chapter for EFL, in the same solution as the
 mapper (`starter/dotnet/Efl.sln`), so a mapper API change breaks its build.
 
-| Part | Starter location |
-|---|---|
-| Endpoints `to-json`, `to-aml` (with `?style=link` or `?style=element`), `update`, `validate` (with the list of rule ids), `library`, `library/layout`, `health` | `starter/dotnet/Efl.Web/Program.cs:39-143` |
-| Body cap, `nosniff`, `no-cache` on static files | `Program.cs:17-37` |
-| Hierarchy lookup and `X-Efl-Info` header with the candidate hierarchies | `Program.cs:41-61`, `:140-149` |
-| Error wrapper: 400 for input errors, logged 500 otherwise | `Program.cs:166-196` |
-| Bundle and example staged into `wwwroot/` by a `Copy` target that fails without the bundle; the staged examples folder is removed first, so a renamed or deleted example is not served on | `starter/dotnet/Efl.Web/Efl.Web.csproj:19-37` |
-| Page: open AML or JSON, keep the opened AML text, Update writes into it and keeps the result as the new source, downloads with a late revoke, SVG from `saveSVG` in the page, findings select their element | `starter/dotnet/Efl.Web/wwwroot/index.html:45-167` |
-| Browser and API test (7 checks, including both library downloads) | `starter/web/tools/verify-webapp.mjs` |
+| Part | Starter file | Symbols |
+|---|---|---|
+| Endpoints `to-json`, `to-aml` (with `?style=link` or `?style=element`), `update`, `validate` (with the list of rule ids), `library`, `library/layout`, `health` | `starter/dotnet/Efl.Web/Program.cs` | `MapPost("/api/to-json", ...)`, `MapPost("/api/to-aml", ...)`, `MapPost("/api/update", ...)`, `MapPost("/api/validate", ...)`, `MapGet("/api/library", ...)`, `MapGet("/api/library/layout", ...)`, `MapGet("/api/health", ...)` |
+| Body cap, `nosniff`, `no-cache` on static files | `starter/dotnet/Efl.Web/Program.cs` | `MaxBodyBytes`, the `app.Use` middleware, `UseStaticFiles` (`OnPrepareResponse`) |
+| Hierarchy lookup and `X-Efl-Info` header with the candidate hierarchies | `starter/dotnet/Efl.Web/Program.cs` | `FindHierarchy`, `MapPost("/api/to-json", ...)` |
+| Error wrapper: 400 for input errors, logged 500 otherwise | `starter/dotnet/Efl.Web/Program.cs` | `Guarded`, `Fail` |
+| Bundle and example staged into `wwwroot/` by a `Copy` target that fails without the bundle; the staged examples folder is removed first, so a renamed or deleted example is not served on | `starter/dotnet/Efl.Web/Efl.Web.csproj` | target `StageModeler` |
+| Page: open AML or JSON, keep the opened AML text, Update writes into it and keeps the result as the new source, downloads with a late revoke, SVG from `saveSVG` in the page, findings select their element | `starter/dotnet/Efl.Web/wwwroot/index.html` | module script: `openedAml`, `call`, `download`, `show`, `guarded`, the `update`, `svg` and `validate` click handlers |
+| Browser and API test (7 checks, including both library downloads) | `starter/web/tools/verify-webapp.mjs` | `check` calls |
 
 `verify-webapp.mjs` builds the project and then starts the built `Efl.Web.dll` directly with `--urls`
 and the project folder as working directory (the content root, where `wwwroot` is found), because
 `dotnet run` starts the app as a child process that survives killing `dotnet run`, keeps the port and
-locks the build output for the next run (`starter/web/tools/verify-webapp.mjs:20-31`). Its checks: the
-page boots and loads the example, JSON to AML and back is lossless in both connection encodings, an
-update keeps a foreign hierarchy, a broken file is a 400, and validation names rule and element
-(`:66-118`). It only runs locally; add a base URL argument as in the PT test if you want to point it
-at a deployment.
+locks the build output for the next run (`starter/web/tools/verify-webapp.mjs`, `build` and
+`server`, with the comment above them). Its checks: the page boots and loads the example, JSON to
+AML and back is lossless in both connection encodings, an update keeps a foreign hierarchy, a broken
+file is a 400, and validation names rule and element (same file, the `check` calls from "the page
+loads the modeler and the example" to "validation names the rule and the element"). It only runs
+locally; add a base URL argument as in the PT test if you want to point it at a deployment.
 
 What the starter leaves out, and what to add from this chapter before a public deployment: rate
 limiting and forwarded headers (§3), HSTS and MIME types for `.aml` and your exchange format (§6; the
@@ -581,23 +619,23 @@ starter serves only a `.json` example), the client address and mapper version in
 
 ## Where to look
 
-| Topic | File |
-|---|---|
-| Minimal web app to start from | `starter/dotnet/Efl.Web/Program.cs`, `Efl.Web.csproj`, `wwwroot/index.html` |
-| Web app test that starts the built app | `starter/web/tools/verify-webapp.mjs` |
-| Load helper against null `CAEXFile` | `starter/dotnet/Efl.Conversion/EflDocuments.cs` |
-| Complete single-process web app (endpoints, limits, errors) | AMLPetriNet: dotnet/PtMapper.Web/Program.cs |
-| Bundle staging, 32-bit note | AMLPetriNet: dotnet/PtMapper.Web/PtMapper.Web.csproj |
-| Page: open, update, validate, SVG, download, concurrency | AMLPetriNet: dotnet/PtMapper.Web/wwwroot/index.html |
-| Browser test of the page, local or live | AMLPetriNet: web/tools/verify-webapp.mjs |
-| Host calls guarded so the bundle boots in a plain browser | AMLPetriNet: web/src/bridge.js |
-| SVG export shared by plugin and page | AMLPetriNet: web/src/svg.js |
-| Single-file bundle build, no CDN | AMLPetriNet: web/build.mjs |
-| CI building bundle then solution including the web project | AMLPetriNet: .github/workflows/ci.yml |
-| Endpoint table, limits, run instructions | AMLPetriNet: README.md |
-| Separate .NET API with CORS and warnings header | fpb-aml-mapper: dotnet/FpbMapper.Web/Program.cs |
-| Node reverse proxy: body limits, rate limit, `/pt` pass-through, header whitelist | fpb-aml-mapper: server.js |
-| Converter page with absolute API path and immediate revoke | fpb-aml-mapper: public/index.html |
-| Publish and zip deploy commands | fpb-aml-mapper: README.md |
-| Plugin referencing mapper and bundle | AMLFPB.js: Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj |
-| Modeler web app shipped in the npm package | FPB.JS: package.json, .github/workflows/release.yml |
+| Topic | File | Symbols |
+|---|---|---|
+| Minimal web app to start from | `starter/dotnet/Efl.Web/Program.cs`, `Efl.Web.csproj`, `wwwroot/index.html` | `Guarded`, `FindHierarchy`, target `StageModeler` |
+| Web app test that starts the built app | `starter/web/tools/verify-webapp.mjs` | `build`, `server`, `check` |
+| Load helper against null `CAEXFile` | `starter/dotnet/Efl.Conversion/EflDocuments.cs` | `Load` |
+| Complete single-process web app (endpoints, limits, errors) | AMLPetriNet: `dotnet/PtMapper.Web/Program.cs` | `MapPost`/`MapGet` endpoints, `AddRateLimiter`, `Guarded` |
+| Bundle staging, 32-bit note | AMLPetriNet: `dotnet/PtMapper.Web/PtMapper.Web.csproj` | `StageWebAssets`, `PlatformTarget` |
+| Page: open, update, validate, SVG, download, concurrency | AMLPetriNet: `dotnet/PtMapper.Web/wwwroot/index.html` | `openAml`, `saveAml`, `validate`, `saveSvg`, `download`, `working` |
+| Browser test of the page, local or live | AMLPetriNet: `web/tools/verify-webapp.mjs` | `base`, `saves` |
+| Host calls guarded so the bundle boots in a plain browser | AMLPetriNet: `web/src/bridge.js` | `post` |
+| SVG export shared by plugin and page | AMLPetriNet: `web/src/svg.js` | `exportSvg` |
+| Single-file bundle build, no CDN | AMLPetriNet: `web/build.mjs` | header comment |
+| CI building bundle then solution including the web project | AMLPetriNet: `.github/workflows/ci.yml` | steps "Build the modeler bundle", "Build" |
+| Endpoint table, limits, run instructions | AMLPetriNet: `README.md` | section "Web application" |
+| Separate .NET API with CORS and warnings header | fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs` | `AddCors`, `WithExposedHeaders` |
+| Node reverse proxy: body limit, rate limit, API route whitelist, copied warnings header | fpb-aml-mapper: `server.js` | `MAX_BODY_BYTES`, `rateLimit`, `app.post('/api/:direction', ...)` |
+| Converter page with absolute API path and immediate revoke | fpb-aml-mapper: `public/index.html` | `convert`, `downloadOutput` |
+| Publish and zip deploy commands | fpb-aml-mapper: `README.md` | section "Deploy to Azure" |
+| Plugin referencing mapper and bundle | AMLFPB.js: `Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj` | `ProjectReference`, `FpbJsDistDir`, `VerifyFpbJsDist` |
+| Modeler web app shipped in the npm package | FPB.JS: `package.json`, `.github/workflows/release.yml` | `files`; the `npm publish` step |

@@ -77,6 +77,14 @@ public class PackageTests
     }
 
     [Fact]
+    public void ThePackageCarriesTheThirdPartyNotices()
+    {
+        // The bundled modeler code and WebView2 are redistributed; their
+        // licenses require the notices in the package.
+        Assert.Contains("THIRD-PARTY-NOTICES.md", PackageEntries());
+    }
+
+    [Fact]
     public void MetadataAndProjectAgreeOnTheVersion()
     {
         var metadata = XDocument.Load(Path.Combine(PluginFolder(), "Metadata.xml"));

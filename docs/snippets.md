@@ -3,7 +3,7 @@
 ## In short
 
 - Copy-paste code for the tasks a builder does most often, grouped by layer: mapper (C# with Aml.Engine), modeler (JavaScript with diagram-js), plugin (C# with WPF and WebView2), web app, CI.
-- Every snippet names the starter file and lines it comes from. The excerpts are trimmed; `// ...` marks left-out code.
+- Every snippet names the starter file and the symbols it comes from. The excerpts are trimmed; `// ...` marks left-out code.
 - **The starter is the source of truth.** When a snippet and the starter disagree, the starter wins, because the starter is built and tested (`dotnet test`, `npm test`, `npm run test:webapp`, plugin package tests). Fix this page, not the starter.
 - Names in the snippets use the EFL prefix (`Efl`, `EFL_`, `efl:`). After `tools/new-language.mjs` they carry your prefix.
 - "Watch out" bullets point to entries in [09-pitfalls.md](09-pitfalls.md) by their id.
@@ -15,59 +15,59 @@ Read fully when: never. Look up the task in the table, copy the snippet, then op
 | Task | Section |
 |---|---|
 | **Mapper (C#, Aml.Engine)** | |
-| Create a CAEX document with SourceDocumentInformation | [S01](#s01-create-a-caex-document-with-sourcedocumentinformation) |
-| Add an ExternalReference with an alias | [S02](#s02-add-an-externalreference-with-an-alias) |
-| Embed a published shared library and follow the document's path form | [S49](#s49-embed-a-published-shared-library-and-follow-the-documents-path-form) |
-| RoleClass with base class and a typed attribute | [S03](#s03-roleclass-with-base-class-and-a-typed-attribute) |
-| SystemUnitClass with SupportedRoleClass | [S04](#s04-systemunitclass-with-supportedroleclass) |
-| InterfaceClass hierarchy | [S05](#s05-interfaceclass-hierarchy) |
-| Stamp deterministic class ids | [S06](#s06-stamp-deterministic-class-ids) |
-| Deterministic UUID from parts | [S07](#s07-deterministic-uuid-from-parts) |
-| Instance from a SystemUnitClass with a deterministic id | [S08](#s08-instance-from-a-systemunitclass-with-a-deterministic-id) |
-| Insert keeping document order | [S09](#s09-insert-keeping-document-order) |
-| Nested attribute values with invariant culture | [S10](#s10-nested-attribute-values-with-invariant-culture) |
-| Bounds, port coordinates and waypoints | [S11](#s11-bounds-port-coordinates-and-waypoints) |
-| ExternalInterface and InternalLink, both encodings | [S12](#s12-externalinterface-and-internallink-in-both-encodings) |
-| Read class, attributes, interfaces and links tolerantly | [S13](#s13-read-class-attributes-interfaces-and-links-tolerantly) |
-| Find a hierarchy by id, then by name | [S14](#s14-find-a-hierarchy-by-id-then-by-name) |
-| Update in place | [S15](#s15-update-in-place) |
-| Load AML text safely | [S16](#s16-load-aml-text-safely) |
-| Save without schema clutter | [S17](#s17-save-without-schema-clutter) |
-| Validator rule with element id | [S18](#s18-validator-rule-with-element-id) |
-| Layered layout for nodes without position | [S19](#s19-layered-layout-for-nodes-without-position) |
+| Create a CAEX document with SourceDocumentInformation | [SN-01](#sn-01-create-a-caex-document-with-sourcedocumentinformation) |
+| Add an ExternalReference with an alias | [SN-02](#sn-02-add-an-externalreference-with-an-alias) |
+| Embed a published shared library and follow the document's path form | [SN-49](#sn-49-embed-a-published-shared-library-and-follow-the-documents-path-form) |
+| RoleClass with base class and a typed attribute | [SN-03](#sn-03-roleclass-with-base-class-and-a-typed-attribute) |
+| SystemUnitClass with SupportedRoleClass | [SN-04](#sn-04-systemunitclass-with-supportedroleclass) |
+| InterfaceClass hierarchy | [SN-05](#sn-05-interfaceclass-hierarchy) |
+| Stamp deterministic class ids | [SN-06](#sn-06-stamp-deterministic-class-ids) |
+| Deterministic UUID from parts | [SN-07](#sn-07-deterministic-uuid-from-parts) |
+| Instance from a SystemUnitClass with a deterministic id | [SN-08](#sn-08-instance-from-a-systemunitclass-with-a-deterministic-id) |
+| Insert keeping document order | [SN-09](#sn-09-insert-keeping-document-order) |
+| Nested attribute values with invariant culture | [SN-10](#sn-10-nested-attribute-values-with-invariant-culture) |
+| Bounds, port coordinates and waypoints | [SN-11](#sn-11-bounds-port-coordinates-and-waypoints) |
+| ExternalInterface and InternalLink, both encodings | [SN-12](#sn-12-externalinterface-and-internallink-in-both-encodings) |
+| Read class, attributes, interfaces and links tolerantly | [SN-13](#sn-13-read-class-attributes-interfaces-and-links-tolerantly) |
+| Find a hierarchy by id, then by name | [SN-14](#sn-14-find-a-hierarchy-by-id-then-by-name) |
+| Update in place | [SN-15](#sn-15-update-in-place) |
+| Load AML text safely | [SN-16](#sn-16-load-aml-text-safely) |
+| Save without schema clutter | [SN-17](#sn-17-save-without-schema-clutter) |
+| Validator rule with element id | [SN-18](#sn-18-validator-rule-with-element-id) |
+| Layered layout for nodes without position | [SN-19](#sn-19-layered-layout-for-nodes-without-position) |
 | **Modeler (JavaScript, diagram-js)** | |
-| Diagram with a module list | [S20](#s20-diagram-with-a-module-list) |
-| Custom renderer with getShapePath | [S21](#s21-custom-renderer-with-getshapepath) |
-| Element factory with random ids | [S22](#s22-element-factory-with-random-ids) |
-| Layouter with cropping | [S23](#s23-layouter-with-cropping) |
-| Rule provider | [S24](#s24-rule-provider) |
-| Palette provider | [S25](#s25-palette-provider) |
-| Context pad provider | [S26](#s26-context-pad-provider) |
-| Command handler for property updates | [S27](#s27-command-handler-for-property-updates) |
-| Direct editing provider | [S28](#s28-direct-editing-provider) |
-| Import a model | [S29](#s29-import-a-model) |
-| Export with rounding and bend points only | [S30](#s30-export-with-rounding-and-bend-points-only) |
-| SVG export without editor furniture | [S31](#s31-svg-export-without-editor-furniture) |
-| Bridge: debounced changes, import queue, echo baseline | [S32](#s32-bridge-with-debounced-changes-import-queue-and-echo-baseline) |
-| Playwright harness driving services | [S33](#s33-playwright-harness-driving-services) |
+| Diagram with a module list | [SN-20](#sn-20-diagram-with-a-module-list) |
+| Custom renderer with getShapePath | [SN-21](#sn-21-custom-renderer-with-getshapepath) |
+| Element factory with random ids | [SN-22](#sn-22-element-factory-with-random-ids) |
+| Layouter with cropping | [SN-23](#sn-23-layouter-with-cropping) |
+| Rule provider | [SN-24](#sn-24-rule-provider) |
+| Palette provider | [SN-25](#sn-25-palette-provider) |
+| Context pad provider | [SN-26](#sn-26-context-pad-provider) |
+| Command handler for property updates | [SN-27](#sn-27-command-handler-for-property-updates) |
+| Direct editing provider | [SN-28](#sn-28-direct-editing-provider) |
+| Import a model | [SN-29](#sn-29-import-a-model) |
+| Export with rounding and bend points only | [SN-30](#sn-30-export-with-rounding-and-bend-points-only) |
+| SVG export without editor furniture | [SN-31](#sn-31-svg-export-without-editor-furniture) |
+| Bridge: debounced changes, import queue, echo baseline | [SN-32](#sn-32-bridge-with-debounced-changes-import-queue-and-echo-baseline) |
+| Playwright harness driving services | [SN-33](#sn-33-playwright-harness-driving-services) |
 | **Plugin (C#, WPF, WebView2)** | |
-| PluginViewBase skeleton | [S34](#s34-pluginviewbase-skeleton) |
-| DocumentLoaded | [S35](#s35-documentloaded) |
-| WebView2 init with virtual host and handler removal | [S36](#s36-webview2-init-with-virtual-host-and-handler-removal) |
-| Ready handshake with buffered push | [S37](#s37-ready-handshake-with-buffered-push) |
-| Request and response with timeout | [S38](#s38-request-and-response-with-timeout) |
-| Echo baseline and pending model | [S39](#s39-echo-baseline-and-pending-model) |
-| Update button flow | [S40](#s40-update-button-flow) |
-| Settings in APPDATA | [S41](#s41-settings-in-appdata) |
-| Log to TEMP and a tab | [S42](#s42-log-to-temp-and-a-tab) |
-| csproj packaging | [S43](#s43-csproj-packaging) |
-| Package tests | [S44](#s44-package-tests) |
+| PluginViewBase skeleton | [SN-34](#sn-34-pluginviewbase-skeleton) |
+| DocumentLoaded | [SN-35](#sn-35-documentloaded) |
+| WebView2 init with virtual host and handler removal | [SN-36](#sn-36-webview2-init-with-virtual-host-and-handler-removal) |
+| Ready handshake with buffered push | [SN-37](#sn-37-ready-handshake-with-buffered-push) |
+| Request and response with timeout | [SN-38](#sn-38-request-and-response-with-timeout) |
+| Echo baseline and pending model | [SN-39](#sn-39-echo-baseline-and-pending-model) |
+| Update button flow | [SN-40](#sn-40-update-button-flow) |
+| Settings in APPDATA | [SN-41](#sn-41-settings-in-appdata) |
+| Log to TEMP and a tab | [SN-42](#sn-42-log-to-temp-and-a-tab) |
+| csproj packaging | [SN-43](#sn-43-csproj-packaging) |
+| Package tests | [SN-44](#sn-44-package-tests) |
 | **Web app** | |
-| Minimal API with 400 and 500 separated | [S45](#s45-minimal-api-with-400-and-500-separated) |
-| ASCII-safe info header | [S46](#s46-ascii-safe-info-header) |
-| Staged bundle target | [S47](#s47-staged-bundle-target) |
+| Minimal API with 400 and 500 separated | [SN-45](#sn-45-minimal-api-with-400-and-500-separated) |
+| ASCII-safe info header | [SN-46](#sn-46-ascii-safe-info-header) |
+| Staged bundle target | [SN-47](#sn-47-staged-bundle-target) |
 | **CI** | |
-| Workflow skeleton | [S48](#s48-workflow-skeleton) |
+| Workflow skeleton | [SN-48](#sn-48-workflow-skeleton) |
 
 ---
 
@@ -75,7 +75,7 @@ Read fully when: never. Look up the task in the table, copy the snippet, then op
 
 All mapper snippets assume `using Aml.Engine.CAEX;` and, for `CreateClassInstance`, `using Aml.Engine.CAEX.Extensions;`.
 
-### S01 Create a CAEX document with SourceDocumentInformation
+### SN-01 Create a CAEX document with SourceDocumentInformation
 
 Use when: the mapper writes a new document from a model.
 
@@ -105,13 +105,13 @@ public static CAEXDocument Convert(
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflToCaex.cs:32-54`
+Source: `starter/dotnet/Efl.Conversion/EflToCaex.cs` (`Convert`)
 
 Watch out:
-- `LastWritingDateTime` differs on every write unless `writtenAt` is given. Golden tests must normalise it (PF-AML-04). Files kept in the repository are written with a fixed value (`eflmap to-aml ... --timestamp 2026-01-01T00:00:00Z`, `starter/dotnet/Efl.Tool/Program.cs:46`, parsed at `:116-120`), and CI writes them again and fails on `git diff` (S48).
+- `LastWritingDateTime` differs on every write unless `writtenAt` is given. Golden tests must normalise it (PF-AML-04). Files kept in the repository are written with a fixed value (`eflmap to-aml ... --timestamp 2026-01-01T00:00:00Z`, the `to-aml` command in `Run` of `starter/dotnet/Efl.Tool/Program.cs`, parsed by `Timestamp`), and CI writes them again and fails on `git diff` (SN-48).
 - `OriginID` names the tool, not the file; it is the same in every document the editor saves. Do not use it alone as a document identity (PF-CCH-04).
 
-### S02 Add an ExternalReference with an alias
+### SN-02 Add an ExternalReference with an alias
 
 Use when: class paths point into a library that is referenced rather than copied (the AutomationML base libraries).
 
@@ -136,14 +136,14 @@ private static void EnsureExternalReference(CAEXFileType caex, string alias, str
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs:26-38` and `:314-321`, called at `:50`
+Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs` (`BaseAlias`, `BasePath`, `BaseRole`, `BasePort`, `EnsureExternalReference`; called from `EnsureLibraries`)
 
 Watch out:
-- The AutomationML Editor does not follow file references. Small shared libraries (OMG_DD, ObjectReferences) must be embedded into created documents, not referenced (PF-AML-09; recipe §3 "Shared libraries in documents"). The starter embeds OMG_DD from the published file (S49); only the library artefact references it.
+- The AutomationML Editor does not follow file references. Small shared libraries (OMG_DD, ObjectReferences) must be embedded into created documents, not referenced (PF-AML-09; recipe §3 "Shared libraries in documents"). The starter embeds OMG_DD from the published file (SN-49); only the library artefact references it.
 - The path ends up in every document you write. Reference the base library by file name, as the starter does; never by a URL that contains a token or credentials (PF-AML-13).
-- Readers must compare class paths with the alias stripped, because documents choose their own alias (PF-AML-08, see S13).
+- Readers must compare class paths with the alias stripped, because documents choose their own alias (PF-AML-08, see SN-13).
 
-### S49 Embed a published shared library and follow the document's path form
+### SN-49 Embed a published shared library and follow the document's path form
 
 Use when: a shared AttributeTypeLib (OMG_DD in the starter; ObjectReferences if your language has references) has to be inside the documents the mapper creates, and every attribute typed with it must use the path form the document already uses.
 
@@ -187,15 +187,15 @@ private static ExternalReferenceType? ReferenceTo(CAEXFileType caex) =>
         || r.Alias == Alias);
 ```
 
-Source: `starter/dotnet/Efl.Conversion/Efl.Conversion.csproj:13-18`; `starter/dotnet/Efl.Conversion/EflDiagramInterchange.cs:49-60`, `:77-99`; called from `starter/dotnet/Efl.Conversion/EflLibraries.cs:51-52`; tests `starter/dotnet/Efl.Tests/DiagramInterchangeTests.cs`
+Source: `starter/dotnet/Efl.Conversion/Efl.Conversion.csproj` (the `<EmbeddedResource>` item for the OMG_DD file); `starter/dotnet/Efl.Conversion/EflDiagramInterchange.cs` (`EnsureIn`, `PathOf`, `PathIn`, `ReferenceTo`); called from `starter/dotnet/Efl.Conversion/EflLibraries.cs` (`EnsureLibraries`); tests `starter/dotnet/Efl.Tests/DiagramInterchangeTests.cs`
 
 Watch out:
-- Take the published file, never types rebuilt from a description; keep a test that the embedded copy equals the file (`starter/dotnet/Efl.Tests/DiagramInterchangeTests.cs:86-95`, PF-AML-16). The playbook ships OMG_DD in `starter/libraries/`; obtain ObjectReferences through the library manager of the AutomationML Editor (D-90).
-- `caex.Node.Add` appends at the end of `CAEXFile`. That is valid only because `AttributeTypeLib` is last in the CAEX schema order; any other library kind has to be moved into schema order. `starter/dotnet/Efl.Tests/DiagramInterchangeTests.cs:59-84` validates created documents against the schema, with a negative control.
+- Take the published file, never types rebuilt from a description; keep a test that the embedded copy equals the file (`TheEmbeddedLibraryIsThePublishedFile` in `starter/dotnet/Efl.Tests/DiagramInterchangeTests.cs`, PF-AML-16). The playbook ships OMG_DD in `starter/libraries/`; obtain ObjectReferences through the library manager of the AutomationML Editor (D-90).
+- `caex.Node.Add` appends at the end of `CAEXFile`. That is valid only because `AttributeTypeLib` is last in the CAEX schema order; any other library kind has to be moved into schema order. `ADocumentTheMapperCreatesIsValidAgainstTheCaexSchema` in `starter/dotnet/Efl.Tests/DiagramInterchangeTests.cs` validates created documents against the schema, with a negative control (`TheSchemaCheckRejectsALibraryInAPlaceTheSchemaDoesNotAllow`).
 - A document that already carries or references the library is left alone, and paths follow its form, including an alias of its own (`DD@...`). Writing the inline form into a referencing document, or the aliased form into a carrying one, leaves unresolved types (PF-AML-10).
-- The published library artefact references the file instead (`ReferenceFrom`, `starter/dotnet/Efl.Conversion/EflDiagramInterchange.cs:62-74`), and `eflmap library` writes the file beside it (`starter/dotnet/Efl.Tool/Program.cs:97-109`).
+- The published library artefact references the file instead (`ReferenceFrom`, `starter/dotnet/Efl.Conversion/EflDiagramInterchange.cs`), and `eflmap library` writes the file beside it (the `library` command in `Run`, `starter/dotnet/Efl.Tool/Program.cs`).
 
-### S03 RoleClass with base class and a typed attribute
+### SN-03 RoleClass with base class and a typed attribute
 
 Use when: defining an element type of the language (pattern P1: shared attributes once on an abstract base role).
 
@@ -230,14 +230,14 @@ private static void AddIdentification(IObjectWithAttributes parent)
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs:125-129`, `:192-203`, `:268-275`
+Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs` (`EnsureAttributeTypeLib`, `EnsureRoleClassLib`, `AddIdentification`)
 
 Watch out:
-- Every library `Ensure...` method returns early when the library exists (`if (caex.RoleClassLib[...] != null) return;`, line 178). A changed library therefore needs a new `LibraryVersion`, not a silent rewrite.
+- Every library `Ensure...` method returns early when the library exists (`if (caex.RoleClassLib[...] != null) return;` at the start of `EnsureRoleClassLib`). A changed library therefore needs a new `LibraryVersion`, not a silent rewrite.
 - Keep names in `EflNames.cs`; no string literal for a CAEX name elsewhere (recipe §4.2).
-- `AddViewInformation` types `ViewInformation` and `position` with `DD_Bounds` and `DD_Point` from OMG_DD, in the document's path form (`EflDiagramInterchange.PathIn`, S49; recipe §3 P7). Do not declare layout types of your own.
+- `AddViewInformation` types `ViewInformation` and `position` with `DD_Bounds` and `DD_Point` from OMG_DD, in the document's path form (`EflDiagramInterchange.PathIn`, SN-49; recipe §3 P7). Do not declare layout types of your own.
 
-### S04 SystemUnitClass with SupportedRoleClass
+### SN-04 SystemUnitClass with SupportedRoleClass
 
 Use when: defining the templates instances are created from (pattern P4).
 
@@ -258,12 +258,12 @@ private static void AddSupportedRole(SystemUnitFamilyType suc, string rolePath) 
     suc.SupportedRoleClass.Append().RefRoleClassPath = rolePath;
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs:239-249` and `:265-266`
+Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs` (`EnsureSystemUnitClassLib`, `AddSupportedRole`)
 
 Watch out:
-- `CreateClassInstance` copies only the first SupportedRoleClass into a RoleRequirement; the diagram class has two. See S08 for the fix.
+- `CreateClassInstance` copies only the first SupportedRoleClass into a RoleRequirement; the diagram class has two. See SN-08 for the fix.
 
-### S05 InterfaceClass hierarchy
+### SN-05 InterfaceClass hierarchy
 
 Use when: defining connection endpoints, one typed `Out`/`In` pair per directed connection type (pattern P2).
 
@@ -292,12 +292,12 @@ private static void AddInterface(InterfaceClassLibType icl, string name, string 
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs:145-172`
+Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs` (`EnsureInterfaceClassLib`, `AddInterface`)
 
 Watch out:
-- Lines 161-163 add `EFL_FlowEnd`, `EFL_FlowSource` and `EFL_FlowTarget` for the reified encoding. Delete the classes of the encoding your language does not use (recipe §3 P6).
+- `EnsureInterfaceClassLib` also adds `EFL_FlowEnd`, `EFL_FlowSource` and `EFL_FlowTarget` for the reified encoding. Delete the classes of the encoding your language does not use (recipe §3 P6).
 
-### S06 Stamp deterministic class ids
+### SN-06 Stamp deterministic class ids
 
 Use when: always, as the last step of building libraries. Aml.Engine gives every created object a random id.
 
@@ -339,13 +339,13 @@ private static string Path(XElement element)
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs:70-104`, called at `:57`
+Source: `starter/dotnet/Efl.Conversion/EflLibraries.cs` (`StampClassIds`, `Libraries`, `Path`; called from `EnsureLibraries`)
 
 Watch out:
 - Without it, two runs of the same code produce different files and every diff is noise (PF-AML-04, PF-ID-02).
 - It works on the `XElement` (`caex.Node`), not on wrappers. That is also the way to compare objects reliably (PF-AML-02).
 
-### S07 Deterministic UUID from parts
+### SN-07 Deterministic UUID from parts
 
 Use when: any CAEX id derived from model ids (elements, hierarchies, interfaces, links, classes).
 
@@ -377,14 +377,14 @@ public static string Interface(string ownerCaexId, string interfaceName) =>
     For("interface", ownerCaexId, interfaceName);
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflIds.cs:20-46` and `:58-61`
+Source: `starter/dotnet/Efl.Conversion/EflIds.cs` (`For`, `Interface`)
 
 Watch out:
 - Version nibble on byte 7, variant on byte 8 (PF-ID-03).
 - Salt child ids with the owner's CAEX id (PF-ID-06).
 - `ToString("B")` writes braces. The modeler side uses the language id, not the CAEX id; if you ever compare the two forms, compare brace-insensitively (PF-ID-04).
 
-### S08 Instance from a SystemUnitClass with a deterministic id
+### SN-08 Instance from a SystemUnitClass with a deterministic id
 
 Use when: creating any InternalElement of the language.
 
@@ -456,14 +456,14 @@ public sealed class IdSpace
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflWrite.cs:27-55`; caller `starter/dotnet/Efl.Conversion/EflToCaex.cs:65-76`; `starter/dotnet/Efl.Conversion/EflIds.cs:64-95`
+Source: `starter/dotnet/Efl.Conversion/EflWrite.cs` (`Classes`, `CreateInstance`); caller `starter/dotnet/Efl.Conversion/EflToCaex.cs` (`AppendInto`); `starter/dotnet/Efl.Conversion/EflIds.cs` (`DistinctElement`, `IdSpace`)
 
 Watch out:
 - `CreateClassInstance` is an extension method: `using Aml.Engine.CAEX.Extensions;` (PF-AML-05).
 - `TryAdd`, not `ToDictionary`, for anything built from a document (PF-AML-12).
 - Read all ids once into `IdSpace`, not per element through the engine (PF-ID-12).
 
-### S09 Insert keeping document order
+### SN-09 Insert keeping document order
 
 Use when: every insert of an InternalElement.
 
@@ -475,12 +475,12 @@ internal static void Append(InternalElementType parent, InternalElementType chil
 internal static void Append(InstanceHierarchyType parent, InternalElementType child) => parent.Insert(child, false);
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflWrite.cs:57-63`
+Source: `starter/dotnet/Efl.Conversion/EflWrite.cs` (`Append`)
 
 Watch out:
 - PF-AML-01. Route every insert through this helper; one direct `Insert(child)` reverses order again.
 
-### S10 Nested attribute values with invariant culture
+### SN-10 Nested attribute values with invariant culture
 
 Use when: writing a numeric attribute, or a child attribute under a typed parent attribute.
 
@@ -512,14 +512,14 @@ internal static string Format(double value)
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflWrite.cs:209-242`
+Source: `starter/dotnet/Efl.Conversion/EflWrite.cs` (`Typed`, `SetChild`, `Format`)
 
 Watch out:
 - Reuse the existing child (`Attribute[name] ?? Append`) so an update does not append duplicates or move attributes to the end (PF-UPD-08).
-- Never write `NaN` or infinity (PF-FMT-19); the reader side checks `double.IsFinite` too (S13).
+- Never write `NaN` or infinity (PF-FMT-19); the reader side checks `double.IsFinite` too (SN-13).
 - Exponent notation and more than two decimals break strict grammars on the way out (PF-FMT-18).
 
-### S11 Bounds, port coordinates and waypoints
+### SN-11 Bounds, port coordinates and waypoints
 
 Use when: storing layout (pattern P7) on an element, on a port, or for a connection.
 
@@ -570,14 +570,14 @@ internal static void SetPortCoordinate(ExternalInterfaceType port, EflPoint poin
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflWrite.cs:134-189`
+Source: `starter/dotnet/Efl.Conversion/EflWrite.cs` (`SetBounds`, `ReplaceWaypoints`, `SetPortCoordinate`)
 
 Watch out:
-- Waypoints are bend points only. The docking points go to `PortCoordinate`, computed by `EflGeometry.DockingPoint` against the same outline the renderer's `getShapePath` draws (`starter/dotnet/Efl.Conversion/EflGeometry.cs:39-69`, S21). Writing docking points as waypoints gives stray bends in other tools (PF-LAY-12).
-- A zero-size node makes the ellipse formula divide by zero (PF-LAY-11). `DockingPoint` returns the centre in that case (`starter/dotnet/Efl.Conversion/EflGeometry.cs:50-52`); keep that guard when you add shapes.
-- The `RefAttributeType` paths point at the `OMG_DD` types in the form the owner's document uses: inline, or under the alias the document gave the file (`EflDiagramInterchange.PathOf`, S49, PF-AML-10). Never hard-code one spelling.
+- Waypoints are bend points only. The docking points go to `PortCoordinate`, computed by `EflGeometry.DockingPoint` against the same outline the renderer's `getShapePath` draws (`starter/dotnet/Efl.Conversion/EflGeometry.cs`, SN-21). Writing docking points as waypoints gives stray bends in other tools (PF-LAY-12).
+- A zero-size node makes the ellipse formula divide by zero (PF-LAY-11). `DockingPoint` returns the centre in that case (`starter/dotnet/Efl.Conversion/EflGeometry.cs`); keep that guard when you add shapes.
+- The `RefAttributeType` paths point at the `OMG_DD` types in the form the owner's document uses: inline, or under the alias the document gave the file (`EflDiagramInterchange.PathOf`, SN-49, PF-AML-10). Never hard-code one spelling.
 
-### S12 ExternalInterface and InternalLink in both encodings
+### SN-12 ExternalInterface and InternalLink in both encodings
 
 Use when: writing a connection. Pick the encoding per connection type (recipe §3 P6) and delete the other branch.
 
@@ -690,15 +690,15 @@ if (ports.TryGetValue(PortKey(flow.TargetId, flow.Id, outgoing: false), out var 
     EflWrite.EnsureLink(diagram, element.Name + "_target", EflIds.Link(element.ID!, "target"), target, targetPort);
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflWrite.cs:170-205`; `starter/dotnet/Efl.Conversion/EflToCaex.cs:89-101`, `:126-147`, `:154-178`, `:185`, `:187-206`
+Source: `starter/dotnet/Efl.Conversion/EflWrite.cs` (`EnsureInterface`, `EnsureLink`); `starter/dotnet/Efl.Conversion/EflToCaex.cs` (`AppendInto`, `WriteFlowAsLink`, `WriteFlowAsElement`, `PortKey`, `EndsAt`)
 
 Watch out:
-- Key the ports by node, flow **and direction**, and create one per connection end. Keyed by node and flow only, a flow from a node to itself got a single port, and both of its links attached to that one port. The starter's validator forbids self loops in EFL (EFL04), but the mapper must not be the part that breaks a language that allows them (test `AFlowFromANodeToItselfGetsTwoPortsAndSurvivesTheRoundTrip`, `starter/dotnet/Efl.Tests/RoundTripTests.cs:190-214`). The updater uses the same `EndsAt` and `PortKey` (S15).
+- Key the ports by node, flow **and direction**, and create one per connection end. Keyed by node and flow only, a flow from a node to itself got a single port, and both of its links attached to that one port. The starter's validator forbids self loops in EFL (EFL04), but the mapper must not be the part that breaks a language that allows them (test `AFlowFromANodeToItselfGetsTwoPortsAndSurvivesTheRoundTrip`, `starter/dotnet/Efl.Tests/RoundTripTests.cs`). The updater uses the same `EndsAt` and `PortKey` (SN-15).
 - `Ensure...` reuses what is there, so a no-op sync does not rewrite interfaces (PF-UPD-02).
-- Set `AInterface`/`BInterface` rather than composing `RefPartnerSideA/B` strings (PF-AML-06). Files from other tools may still use `ElementId:InterfaceId`; the starter reads both forms through `CaexToEfl.InterfaceIdOf` (S13), in the reader and in the updater (PF-AML-07; test `LinksWrittenAsElementAndInterfaceIdAreReadToo` in `starter/dotnet/Efl.Tests/RoundTripTests.cs:134-162`).
+- Set `AInterface`/`BInterface` rather than composing `RefPartnerSideA/B` strings (PF-AML-06). Files from other tools may still use `ElementId:InterfaceId`; the starter reads both forms through `CaexToEfl.InterfaceIdOf` (SN-13), in the reader and in the updater (PF-AML-07; test `LinksWrittenAsElementAndInterfaceIdAreReadToo` in `starter/dotnet/Efl.Tests/RoundTripTests.cs`).
 - The link lives on the diagram element, so all of the language's links are found under one element.
 
-### S13 Read class, attributes, interfaces and links tolerantly
+### SN-13 Read class, attributes, interfaces and links tolerantly
 
 Use when: reading a hierarchy that may have been edited by hand or written by another tool.
 
@@ -792,15 +792,15 @@ if (source == null || target == null)
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/CaexToEfl.cs:193-218`, `:222-223`, `:275-289`, `:167-179`, `:128-158`, `:108-116`
+Source: `starter/dotnet/Efl.Conversion/CaexToEfl.cs` (`ClassOf`, `IsClass`, `IdentificationId`, `Number`, `Double`, `InterfaceIdOf`, `ReadFlowLinks`, `ReadFlowElements`)
 
 Watch out:
 - Class paths may carry an alias (PF-AML-08); compare on the last segment as above.
 - Fall back to `DefaultValue` (PF-AML-11).
-- The id fallback to the CAEX name must be the same in reader and updater (PF-ID-08; the updater does it at `starter/dotnet/Efl.Conversion/EflUpdater.cs:79-80`).
-- A skipped element must not be deleted by the next update (PF-UPD-06). The starter reports it as a warning and records its id in `EflModel.Unresolved` (`starter/dotnet/Efl.Conversion/Models.cs:28-34`); the updater reads that set through `CaexToEfl.UnresolvedIn` (`starter/dotnet/Efl.Conversion/CaexToEfl.cs:35`) before it writes and keeps those elements (S15).
+- The id fallback to the CAEX name must be the same in reader and updater (PF-ID-08; the updater does it in `UpdateInPlace`, `starter/dotnet/Efl.Conversion/EflUpdater.cs`).
+- A skipped element must not be deleted by the next update (PF-UPD-06). The starter reports it as a warning and records its id in `EflModel.Unresolved` (`starter/dotnet/Efl.Conversion/Models.cs`); the updater reads that set through `CaexToEfl.UnresolvedIn` (`starter/dotnet/Efl.Conversion/CaexToEfl.cs`) before it writes and keeps those elements (SN-15).
 
-### S14 Find a hierarchy by id then by name
+### SN-14 Find a hierarchy by id then by name
 
 Use when: the plugin remembers which hierarchy the canvas shows.
 
@@ -833,14 +833,14 @@ var hierarchy = document.CAEXFile.InstanceHierarchy.Append(name);
 hierarchy.ID = EflIds.For("hierarchy", name);
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:303-321`; `starter/dotnet/Efl.Conversion/EflToCaex.cs:66-67`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` (`Bind`, `CurrentHierarchy`); `starter/dotnet/Efl.Conversion/EflToCaex.cs` (`AppendInto`)
 
 Watch out:
 - Binding by name only creates a second hierarchy after a rename in the tree (PF-ID-11).
 - Compare by `ID`, never by reference (PF-AML-02).
-- The web app and the tool find a hierarchy by name or take the first that holds a diagram (`starter/dotnet/Efl.Web/Program.cs:147-156`); they have no remembered binding.
+- The web app and the tool find a hierarchy by name or take the first that holds a diagram (`FindHierarchy` in `starter/dotnet/Efl.Web/Program.cs`); they have no remembered binding.
 
-### S15 Update in place
+### SN-15 Update in place
 
 Use when: writing an edited model back into the document it came from. Never regenerate the hierarchy.
 
@@ -880,7 +880,7 @@ public static EflUpdateSummary UpdateInPlace(
     // ... Reuse(...) per node and flow, WriteNode ...
 ```
 
-One port per connection end, with the same key as the writer (S12), then remove stale ports of this node and the links that used them. Ports of a flow the canvas could not show stay:
+One port per connection end, with the same key as the writer (SN-12), then remove stale ports of this node and the links that used them. Ports of a flow the canvas could not show stay:
 
 ```csharp
 var keep = new HashSet<string>(StringComparer.Ordinal);
@@ -976,17 +976,17 @@ internal static bool IsLanguageOwned(string? attributeName) =>
     || (attributeName?.StartsWith(EflNames.Attributes.WaypointPrefix, StringComparison.Ordinal) ?? false);
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflUpdater.cs:28-82`, `:95-121`, `:157-169`, `:174-175`, `:275-294`, `:313-325`; `starter/dotnet/Efl.Conversion/EflWrite.cs:20-25`
+Source: `starter/dotnet/Efl.Conversion/EflUpdater.cs` (`UpdateInPlace`, `BelongsToUnresolved`, `RemoveLinksTouching`, `CheckFlowEnds`); `starter/dotnet/Efl.Conversion/EflWrite.cs` (`IsLanguageOwned`)
 
 Watch out:
 - An update appends nothing at hierarchy level (PF-UPD-01).
-- The CAEX name is written only when the language name changed, or on a fresh instance (`EflWrite.SetDisplayName`, `starter/dotnet/Efl.Conversion/EflWrite.cs:75-85`; PF-UPD-04).
+- The CAEX name is written only when the language name changed, or on a fresh instance (`EflWrite.SetDisplayName`, `starter/dotnet/Efl.Conversion/EflWrite.cs`; PF-UPD-04).
 - Links elsewhere in the document are removed with a note, not silently (PF-UPD-05).
-- Attributes of another kind are removed only if the language owns them (`RemoveForeignLanguageAttributes`, `starter/dotnet/Efl.Conversion/EflWrite.cs:128-132`; PF-UPD-08).
+- Attributes of another kind are removed only if the language owns them (`RemoveForeignLanguageAttributes`, `starter/dotnet/Efl.Conversion/EflWrite.cs`; PF-UPD-08).
 - Elements the reader could not show are never deleted (PF-UPD-06); the note tells the user to repair them. Their ports on the nodes stay too, or the update cuts the half of the flow that still exists (the test asserts the `In_f3` port survives).
-- Tests to copy: `AnUpdateKeepsWhatSomebodyElseAddedToTheDocument`, `RemovingANodeRemovesItsFlowsAndNothingElse`, `AnUpdateKeepsAFlowTheCanvasCouldNotShow`, `AFlowToANodeThatIsNotThereIsRefusedBeforeAnythingIsWritten`, `WritingTheSameModelBackChangesNoLineOfTheDocument`, `AFlowFromANodeToItselfGetsTwoPortsAndSurvivesTheRoundTrip` (`starter/dotnet/Efl.Tests/RoundTripTests.cs:61-242`).
+- Tests to copy: `AnUpdateKeepsWhatSomebodyElseAddedToTheDocument`, `RemovingANodeRemovesItsFlowsAndNothingElse`, `AnUpdateKeepsAFlowTheCanvasCouldNotShow`, `AFlowToANodeThatIsNotThereIsRefusedBeforeAnythingIsWritten`, `WritingTheSameModelBackChangesNoLineOfTheDocument`, `AFlowFromANodeToItselfGetsTwoPortsAndSurvivesTheRoundTrip` (`starter/dotnet/Efl.Tests/RoundTripTests.cs`).
 
-### S16 Load AML text safely
+### SN-16 Load AML text safely
 
 Use when: any AML input, in the tool, the web app and tests.
 
@@ -1015,13 +1015,13 @@ public static CAEXDocument Load(string text)
 public static CAEXDocument LoadFile(string path) => Load(File.ReadAllText(path));
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflDocuments.cs:19-43`
+Source: `starter/dotnet/Efl.Conversion/EflDocuments.cs` (`Load`, `LoadFile`)
 
 Watch out:
-- `LoadFromString` can return a document whose `CAEXFile` is null; the NullReferenceException then surfaces elsewhere as a 500 (see S45).
+- `LoadFromString` can return a document whose `CAEXFile` is null; the NullReferenceException then surfaces elsewhere as a 500 (see SN-45).
 - `File.ReadAllText` decodes before the XML parser sees the declared encoding. For files that may declare a non-UTF-8 encoding, pass a stream (PF-FMT-13).
 
-### S17 Save without schema clutter
+### SN-17 Save without schema clutter
 
 Use when: writing a document to text or to a file.
 
@@ -1039,12 +1039,12 @@ public static string ToXml(CAEXDocument document)
 public static void SaveFile(CAEXDocument document, string path) => File.WriteAllText(path, ToXml(document));
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflDocuments.cs:46-58`
+Source: `starter/dotnet/Efl.Conversion/EflDocuments.cs` (`ToXml`, `SaveFile`)
 
 Watch out:
 - PF-AML-04. Add `CAEX_ClassModel_V.3.0.xsd` to `.gitignore` anyway, in case something else calls `SaveToFile`.
 
-### S18 Validator rule with element id
+### SN-18 Validator rule with element id
 
 Use when: adding a structural rule from the Phase 1 worksheet (A3).
 
@@ -1098,13 +1098,13 @@ public void EachRuleFiresOnItsOwnBrokenModelAndOnlyThere(string rule)
 }
 ```
 
-Source: `starter/dotnet/Efl.Conversion/EflValidator.cs:13-16`, `:42-43`, `:58-73`; `starter/dotnet/Efl.Tests/ValidatorTests.cs:17-80`
+Source: `starter/dotnet/Efl.Conversion/EflValidator.cs` (`EflFinding`, `EflValidator.RuleIds`, `CheckFlows`); `starter/dotnet/Efl.Tests/ValidatorTests.cs` (`Broken`, `EachRuleFiresOnItsOwnBrokenModelAndOnlyThere`)
 
 Watch out:
 - Validate the model, not the document, so the canvas and a file are checked the same way. Skip documents that hold no element of the language (PF-PLG-11).
 - A rule that fires on good models teaches people to ignore findings. Modelling advice is not a rule.
 
-### S19 Layered layout for nodes without position
+### SN-19 Layered layout for nodes without position
 
 Use when: a model comes from a file without layout, before it is shown or written (pattern P8).
 
@@ -1173,19 +1173,19 @@ foreach (var flow in candidates)
 //     lanes 30 px apart outside the bounding box of every positioned node ...
 ```
 
-Source: `starter/dotnet/Efl.Web/Program.cs:46-47`; `starter/dotnet/Efl.Conversion/EflLayout.cs:33-57`, `:199-289`; tests `starter/dotnet/Efl.Tests/LayoutTests.cs`
+Source: `starter/dotnet/Efl.Web/Program.cs` (the `/api/to-json` endpoint); `starter/dotnet/Efl.Conversion/EflLayout.cs` (`ArrangeMissing`, `RouteFlows`); tests `starter/dotnet/Efl.Tests/LayoutTests.cs`
 
 Watch out:
 - Never move a node that has bounds (PF-LAY-03), and never give bend points to a flow that has some or that touches a node with a position of its own.
-- Break cycles before assigning columns, or cyclic models grow absurdly wide (PF-LAY-04). The starter starts at nodes nothing feeds, in id order (`EflLayout.cs:74-80`); a language with a semantic start (a marking, an initial state) should start there (PF-LAY-05).
+- Break cycles before assigning columns, or cyclic models grow absurdly wide (PF-LAY-04). The starter starts at nodes nothing feeds, in id order (`EflLayout.BackEdges`); a language with a semantic start (a marking, an initial state) should start there (PF-LAY-05).
 - Placing nodes is not enough. Straight, a back flow runs on top of the forward flow between the same two nodes, a flow that skips a column runs through the node in between, and a self loop has no length. Test the lines (no segment inside a foreign node box, no two flows sharing a segment), not only node overlap, and look at `npm run screenshot -- --arranged` (see [08 Layout](08-layout.md) §4.5).
-- Arrange before writing a JSON import into the document, so the document never holds a diagram without layout (`starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:540-542`).
+- Arrange before writing a JSON import into the document, so the document never holds a diagram without layout (`ImportJson` in `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs`).
 
 ---
 
 ## Modeler (JavaScript, diagram-js)
 
-### S20 Diagram with a module list
+### SN-20 Diagram with a module list
 
 Use when: setting up the modeler class.
 
@@ -1252,15 +1252,15 @@ export default class EflModeler extends Diagram {
 }
 ```
 
-Source: `starter/web/src/EflModeler.js:1-119` (module imports at `:3-22`, list at `:49-72`)
+Source: `starter/web/src/EflModeler.js` (`EflModule`, `MODULES`, `EflModeler`; the module imports at the top of the file)
 
 Watch out:
-- `ModelingModule` here is the starter's own module (S23), which depends on diagram-js modeling and replaces `elementFactory`, `layouter` and `connectionDocking`.
+- `ModelingModule` here is the starter's own module (SN-23), which depends on diagram-js modeling and replaces `elementFactory`, `layouter` and `connectionDocking`.
 - Import must return only when the canvas is complete; a delayed import makes an export right after it empty (PF-FMT-06).
 - Keep the public surface small (`importModel`, `exportModel`, `saveSVG`, `get`, `on`); the bridge and the tests depend only on it.
-- Bundle without minification (`starter/web/build.mjs:24-33`); didi falls back to parameter names (PF-DJS-03).
+- Bundle without minification (the `esbuild.build` call for `efl.esm.js` in `starter/web/build.mjs`); didi falls back to parameter names (PF-DJS-03).
 
-### S21 Custom renderer with getShapePath
+### SN-21 Custom renderer with getShapePath
 
 Use when: drawing the language's shapes and connections.
 
@@ -1338,14 +1338,14 @@ export default class Renderer extends BaseRenderer {
 Renderer.$inject = ['eventBus', 'canvas'];
 ```
 
-Source: `starter/web/src/draw/Renderer.js:1-115` and `:145` (arrow marker in `_ensureArrow`, `:118-142`)
+Source: `starter/web/src/draw/Renderer.js` (`Renderer`, `getShapePath`, `Renderer.$inject`; arrow marker in `_ensureArrow`)
 
 Watch out:
 - A new shape needs `getShapePath` here and `EflGeometry.DockingPoint` in the mapper changed together (recipe §4.3).
 - Long names inside a narrow box break mid-word; draw them below the shape (PF-DJS-16).
 - Inline styles on text and markers keep the exported SVG readable without the page's CSS (PF-DJS-15).
 
-### S22 Element factory with random ids
+### SN-22 Element factory with random ids
 
 Use when: always; the default factory's counter ids collide with ids from imported files.
 
@@ -1381,13 +1381,13 @@ export function newId(type) {
 }
 ```
 
-Source: `starter/web/src/modeling/ElementFactory.js:18-44`
+Source: `starter/web/src/modeling/ElementFactory.js` (`ElementFactory`, `newId`)
 
 Watch out:
 - The element registry refuses a second element with the same id; the symptom is a palette drop that does nothing.
 - If your language needs ids that are valid XML names, keep the prefix a letter (PF-ID-07).
 
-### S23 Layouter with cropping
+### SN-23 Layouter with cropping
 
 Use when: connections must end on the node outline, and user bend points must survive.
 
@@ -1438,13 +1438,13 @@ export default {
 };
 ```
 
-Source: `starter/web/src/modeling/Layouter.js:1-41`; `starter/web/src/modeling/index.js:1-23`
+Source: `starter/web/src/modeling/Layouter.js` (`Layouter`); `starter/web/src/modeling/index.js` (`registerHandlers` and the module definition)
 
 Watch out:
 - Without cropping, arrow heads end hidden in the target's centre and the stored end points are centres (PF-LAY-12).
 - Re-layout only connections of shapes that moved; a global re-layout throws away user bend points (PF-LAY-08).
 
-### S24 Rule provider
+### SN-24 Rule provider
 
 Use when: deciding what the canvas allows. Without `RulesModule` nothing can be created; without a rule that answers, non-command actions such as `connection.start` are refused.
 
@@ -1492,15 +1492,15 @@ function isRoot(element) {
 }
 ```
 
-Source: `starter/web/src/rules/Rules.js:1-63`
+Source: `starter/web/src/rules/Rules.js` (`Rules`, `canConnect`, `isRoot`)
 
 Watch out:
 - Return `false` to forbid. A rule returning `undefined` counts as no answer: a command is then allowed (PF-DJS-02), a non-command action is refused.
-- `connection.start` is not a command. Without its rule the palette's global connect tool silently does nothing (PF-DJS-19); `starter/web/tools/verify-modeler.mjs:69-97` draws a flow with that tool and the mouse to catch it.
+- `connection.start` is not a command. Without its rule the palette's global connect tool silently does nothing (PF-DJS-19); the check 'a flow can be drawn with the palette tool and the mouse' in `starter/web/tools/verify-modeler.mjs` draws a flow with that tool and the mouse to catch it.
 - Register `connection.reconnect`, not `reconnectStart`/`reconnectEnd` (PF-DJS-01).
-- Every rule here also belongs in the validator (S18): a file from another tool never saw the canvas rules.
+- Every rule here also belongs in the validator (SN-18): a file from another tool never saw the canvas rules.
 
-### S25 Palette provider
+### SN-25 Palette provider
 
 Use when: adding create entries and tools on the left edge.
 
@@ -1542,13 +1542,13 @@ export default class Palette {
 Palette.$inject = ['palette', 'create', 'elementFactory', 'lassoTool', 'handTool', 'globalConnect'];
 ```
 
-Source: `starter/web/src/palette/Palette.js:12-65`
+Source: `starter/web/src/palette/Palette.js` (`Palette`)
 
 Watch out:
 - Offer both `dragstart` and `click`; one alone is the classic "palette does not work" report.
-- Test selectors on palette entries use `data-action` (`starter/web/tools/verify-modeler.mjs:61`); title and aria attributes change between diagram-js versions (PF-TST-07).
+- Test selectors on palette entries use `data-action` (check 'a node can be dropped from the palette with the mouse' in `starter/web/tools/verify-modeler.mjs`); title and aria attributes change between diagram-js versions (PF-TST-07).
 
-### S26 Context pad provider
+### SN-26 Context pad provider
 
 Use when: adding actions next to a selected element.
 
@@ -1613,13 +1613,13 @@ export default class ContextPad {
 ContextPad.$inject = ['contextPad', 'modeling', 'connect', 'rules', 'commandStack'];
 ```
 
-Source: `starter/web/src/context-pad/ContextPad.js:12-72`
+Source: `starter/web/src/context-pad/ContextPad.js` (`ContextPad`, `editValue`)
 
 Watch out:
-- The `answer` parameter lets a test drive the entry without a dialog (`starter/web/tools/verify-modeler.mjs:131`).
+- The `answer` parameter lets a test drive the entry without a dialog (check 'renaming, setting a value and undoing go through the command stack' in `starter/web/tools/verify-modeler.mjs`).
 - More than one or two attributes need a properties panel; bind editors to collection elements, not to the collection (PF-FMT-03).
 
-### S27 Command handler for property updates
+### SN-27 Command handler for property updates
 
 Use when: any user change to a business object. Never assign to the business object directly.
 
@@ -1672,14 +1672,14 @@ registerHandlers.$inject = ['commandStack'];
 // module: __init__: [registerHandlers]
 ```
 
-Source: `starter/web/src/modeling/UpdatePropertiesHandler.js:11-51`; `starter/web/src/modeling/index.js:8-18`
+Source: `starter/web/src/modeling/UpdatePropertiesHandler.js` (`UpdatePropertiesHandler`, `assignOrDelete`); `starter/web/src/modeling/index.js` (`UPDATE_PROPERTIES`, `registerHandlers`)
 
 Watch out:
 - Returning `[element]` marks it changed, so it is redrawn and `commandStack.changed` reaches the bridge.
 - Every custom command needs `revert` from the start (PF-DJS-05); side effects written in `postExecute` must be recorded on the context too (PF-DJS-06).
 - The `$inject` on `registerHandlers` matters as much as on classes (PF-DJS-03).
 
-### S28 Direct editing provider
+### SN-28 Direct editing provider
 
 Use when: renaming an element in place on double click.
 
@@ -1728,13 +1728,13 @@ export default class LabelEditing {
 LabelEditing.$inject = ['eventBus', 'canvas', 'directEditing', 'commandStack'];
 ```
 
-Source: `starter/web/src/label/LabelEditing.js:12-55`
+Source: `starter/web/src/label/LabelEditing.js` (`LabelEditing`)
 
 Watch out:
-- Clearing a name must remove it, not store a default (PF-DJS-04); `assignOrDelete` in S27 does that.
-- The module list must contain `DirectEditingModule` (S20), or `directEditing` cannot be injected.
+- Clearing a name must remove it, not store a default (PF-DJS-04); `assignOrDelete` in SN-27 does that.
+- The module list must contain `DirectEditingModule` (SN-20), or `directEditing` cannot be injected.
 
-### S29 Import a model
+### SN-29 Import a model
 
 Use when: putting an exchange-format model on an empty canvas.
 
@@ -1800,15 +1800,15 @@ export function importModel(diagram, model) {
 }
 ```
 
-Source: `starter/web/src/io/json.js:15-106`
+Source: `starter/web/src/io/json.js` (`FORMAT_VERSION`, `importModel`)
 
 Watch out:
-- Read a newer `formatVersion` as far as possible and say so; a missing field means version 1. The C# reader does the same (`starter/dotnet/Efl.Conversion/EflJson.cs:74-78`).
+- Read a newer `formatVersion` as far as possible and say so; a missing field means version 1. The C# reader does the same (`EflJson.Read` in `starter/dotnet/Efl.Conversion/EflJson.cs`).
 - One bad element is a warning, never an aborted import (PF-FMT-09).
 - `canvas.addConnection` does not compute waypoints; call the layouter yourself (PF-LAY-08, PF-LAY-01).
-- Clear everything before a second import (`this.clear()` in S20), or models mix (PF-FMT-08). Do not mutate the caller's object (PF-FMT-07).
+- Clear everything before a second import (`this.clear()` in SN-20), or models mix (PF-FMT-08). Do not mutate the caller's object (PF-FMT-07).
 
-### S30 Export with rounding and bend points only
+### SN-30 Export with rounding and bend points only
 
 Use when: turning the canvas into the exchange format.
 
@@ -1846,13 +1846,13 @@ export function exportModel(diagram) {
 const round = (value) => Math.round(value * 100) / 100;
 ```
 
-Source: `starter/web/src/io/json.js:108-141` and `:160-161`
+Source: `starter/web/src/io/json.js` (`exportModel`, `round`)
 
 Watch out:
-- Key order is fixed and matches `EflJson.Write`, with `formatVersion` first; the echo baseline (S39) compares strings, so the same diagram must give the same bytes.
+- Key order is fixed and matches `EflJson.Write`, with `formatVersion` first; the echo baseline (SN-39) compares strings, so the same diagram must give the same bytes.
 - Export ids and plain values only, never live object graphs (PF-FMT-05).
 
-### S31 SVG export without editor furniture
+### SN-31 SVG export without editor furniture
 
 Use when: offering a picture of the diagram.
 
@@ -1887,13 +1887,13 @@ async saveSVG(margin = 10) {
 }
 ```
 
-Source: `starter/web/src/EflModeler.js:125-152`
+Source: `starter/web/src/EflModeler.js` (`saveSVG`)
 
 Watch out:
 - PF-DJS-15. The defs carry the arrow marker; without them the picture has no arrow heads.
-- The test checks labels, markers and the absence of `djs-hit` and `djs-outline` (`starter/web/tools/verify-modeler.mjs:170-176`).
+- The test checks labels, markers and the absence of `djs-hit` and `djs-outline` (check 'the SVG picture has the drawing and none of the editor furniture' in `starter/web/tools/verify-modeler.mjs`).
 
-### S32 Bridge with debounced changes import queue and echo baseline
+### SN-32 Bridge with debounced changes import queue and echo baseline
 
 Use when: connecting the modeler to a WebView2 host. Change only the payload name.
 
@@ -1996,17 +1996,17 @@ Page boot, with a visible error when the modeler fails:
 </script>
 ```
 
-Source: `starter/web/src/bridge.js:29`, `:40-47`, `:76-172` (`runImport` at `:111-127`); `starter/web/index.html:27-47`
+Source: `starter/web/src/bridge.js` (`CHANGE_DEBOUNCE_MS`, `post`, `connectBridge` with its `runImport`); `starter/web/index.html` (the inline `<script type="module">`)
 
 Watch out:
 - `ready` is posted after the listener is attached, never on navigation completed (PF-WV-01).
 - A timer-based `importing` reset stops in hidden tabs; the starter resets in `finally`, not in `requestAnimationFrame` (PF-WV-08).
 - The promise queue prevents PF-WV-09. The `imported` baseline prevents PF-WV-07.
-- A failed import posts only `error`, never `imported`: the host would take the acknowledgement as "the canvas shows what I sent" and drop its unsaved edits (PF-WV-12; checked in `starter/web/tools/verify-bridge.mjs:71-78`).
-- `installDiagnostics` (`bridge.js:54-67`) forwards console output and unhandled errors, because WebView2 has no visible console.
+- A failed import posts only `error`, never `imported`: the host would take the acknowledgement as "the canvas shows what I sent" and drop its unsaved edits (PF-WV-12; checked by 'a broken import is reported as an error and leaves the page working' in `starter/web/tools/verify-bridge.mjs`).
+- `installDiagnostics` (`starter/web/src/bridge.js`) forwards console output and unhandled errors, because WebView2 has no visible console.
 - Tests for exactly these timing rules: `starter/web/tools/verify-bridge.mjs`.
 
-### S33 Playwright harness driving services
+### SN-33 Playwright harness driving services
 
 Use when: testing the modeler and the bridge in a real browser.
 
@@ -2086,18 +2086,18 @@ const allowed = await page.evaluate(() => {
 assertEqual(allowed, { other: { type: 'efl:Flow' }, self: false, start: true }, 'rules');
 ```
 
-Source: `starter/web/tools/harness.mjs:39-74`; `starter/web/tools/verify-bridge.mjs:13-31`; `starter/web/tools/verify-modeler.mjs:99-114`
+Source: `starter/web/tools/harness.mjs` (`run`); `starter/web/tools/verify-bridge.mjs` (`posted`, `clearPosted`, `settle` and the first checks); `starter/web/tools/verify-modeler.mjs` (check 'rules allow a flow between two nodes and refuse one to itself')
 
 Watch out:
-- Position-based clicks are flaky; use services, and keep a few mouse tests for the wiring only (PF-TST-08). The starter has two: dropping a node from the palette and drawing a flow with the connect tool (`verify-modeler.mjs:60-97`); the second fails without the `connection.start` rule (S24), which no API-only test of `connection.create` would notice.
-- The page must be served over http, the same reason the plugin uses a virtual host (S36).
-- Tests do not see a misplaced label or a flow drawn over another. `npm run screenshot` writes a PNG and the SVG export of the example into `web/screenshots/` (ignored by git) through the same harness; `-- --arranged` strips the layout first and places it again with `eflmap arrange` (`starter/web/tools/screenshot.mjs:1-20`, `:37-67`).
+- Position-based clicks are flaky; use services, and keep a few mouse tests for the wiring only (PF-TST-08). The starter has two: dropping a node from the palette and drawing a flow with the connect tool (the first two mouse checks in `starter/web/tools/verify-modeler.mjs`); the second fails without the `connection.start` rule (SN-24), which no API-only test of `connection.create` would notice.
+- The page must be served over http, the same reason the plugin uses a virtual host (SN-36).
+- Tests do not see a misplaced label or a flow drawn over another. `npm run screenshot` writes a PNG and the SVG export of the example into `web/screenshots/` (ignored by git) through the same harness; `-- --arranged` strips the layout first and places it again with `eflmap arrange` (`starter/web/tools/screenshot.mjs`: the header comment and the `if (arranged)` block).
 
 ---
 
 ## Plugin (C#, WPF, WebView2)
 
-### S34 PluginViewBase skeleton
+### SN-34 PluginViewBase skeleton
 
 Use when: creating the plugin view class.
 
@@ -2152,15 +2152,15 @@ public partial class EflPlugin : PluginViewBase, INotifyAMLDocumentLoad, ISuppor
 <Version>0.1.0</Version>
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:31`, `:59-106`; `starter/plugin/Aml.Editor.Plugin.Efl/Metadata.xml:4-6`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` (class `EflPlugin`, its constructor, `PackageName`, `InitialDockPosition`, `CanClose`); `starter/plugin/Aml.Editor.Plugin.Efl/Metadata.xml` (`<PackageName>`, `<DisplayName>`, `<Version>`)
 
 Watch out:
-- DisplayName letters, digits, underscore (PF-PLG-12). A package test checks it (S44).
+- DisplayName letters, digits, underscore (PF-PLG-12). A package test checks it (SN-44).
 - No teardown in `Unloaded` (PF-PLG-02).
-- Bridge object in the constructor (PF-PLG-03); reflection lookup of the open document in `Loaded` (PF-PLG-04, `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/EditorAccess.cs:32-71`).
+- Bridge object in the constructor (PF-PLG-03); reflection lookup of the open document in `Loaded` (PF-PLG-04, `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/EditorAccess.cs`, `TryFindOpenDocument`, `FindDocument`).
 - Put commands into the view's own menu, not the editor toolbar (PF-PLG-07).
 
-### S35 DocumentLoaded
+### SN-35 DocumentLoaded
 
 Use when: implementing `INotifyAMLDocumentLoad`.
 
@@ -2229,14 +2229,14 @@ private void Attach(CAEXDocument document)
 }
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:190-276`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` (`IsDocumentLoaded`, `DocumentLoaded`, `SameFile`, `DocumentUnLoaded`, `ApplicationClose`, `Attach`)
 
 Watch out:
 - Raising `IsDocumentLoaded` loops about forty times a second (PF-PLG-01).
 - Same file, new wrapper: keep the canvas (PF-CCH-03). Identity is `FileName` plus `OriginID`; two unsaved documents with an empty file name count as different.
 - `DocumentUnLoaded` has no parameter; with several documents open the plugin cannot tell which one closed (PF-PLG-06, open).
 
-### S36 WebView2 init with virtual host and handler removal
+### SN-36 WebView2 init with virtual host and handler removal
 
 Use when: booting the WebView2 that shows the modeler.
 
@@ -2330,15 +2330,15 @@ public void Dispose()
 }
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs:31-33`, `:78-138`, `:279-303`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs` (`VirtualHost`, `AssetsFolder`, `InitAsync`, `Dispose`)
 
 Watch out:
 - Check the disposed flag after every await (PF-WV-04).
 - `NavigationStarting` drops readiness (PF-WV-02); `ProcessFailed` drops readiness and reloads (PF-WV-03).
-- `AssetsPath` resolves next to the plugin assembly (`ModelerView.cs:68-76`); the bundle must be packed there (S43, PF-PLG-21).
+- `AssetsPath` resolves next to the plugin assembly (`ModelerView.AssetsPath`); the bundle must be packed there (SN-43, PF-PLG-21).
 - A plugin with several views should also dispose the WebView2 control itself when a view is torn down (PF-WV-05).
 
-### S37 Ready handshake with buffered push
+### SN-37 Ready handshake with buffered push
 
 Use when: sending a model to the page.
 
@@ -2390,14 +2390,14 @@ case MessageType.Ready:
     break;
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs:140-155`, `:196-197`, `:217-245`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs` (`ImportModel`, `Post`, the `MessageType.Ready` case in `OnMessage`)
 
 Watch out:
 - The model travels as a JSON string inside a serialised envelope; never build the envelope by string concatenation (PF-WV-06).
-- Flushing the buffer after the handler's own push overwrote fresh edits (PF-WV-10). The counters `_inReadyHandler`/`_importsDuringReady` decide it, so the host's Ready handler needs no flag of its own (S39).
-- Message type names live once per side: `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/BridgeMessage.cs:23-39` and the header of `starter/web/src/bridge.js` (PF-WV-11).
+- Flushing the buffer after the handler's own push overwrote fresh edits (PF-WV-10). The counters `_inReadyHandler`/`_importsDuringReady` decide it, so the host's Ready handler needs no flag of its own (SN-39).
+- Message type names live once per side: `MessageType` in `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/BridgeMessage.cs` and the header of `starter/web/src/bridge.js` (PF-WV-11).
 
-### S38 Request and response with timeout
+### SN-38 Request and response with timeout
 
 Use when: the host needs an answer from the page (SVG, export).
 
@@ -2451,13 +2451,13 @@ private async void ExportSvg_Click(object sender, RoutedEventArgs e)
 }
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs:178-194`, `:255-257`; `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:592-615`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/ModelerView.cs` (`RequestSvgAsync`, the `MessageType.Svg` case in `OnMessage`); `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` (`ExportSvg_Click`)
 
 Watch out:
 - `RunContinuationsAsynchronously` keeps the continuation off the WebView2 message callback.
-- `Dispose` completes a waiting request with null (S36), so a closed view never hangs the caller.
+- `Dispose` completes a waiting request with null (SN-36), so a closed view never hangs the caller.
 
-### S39 Echo baseline and pending model
+### SN-39 Echo baseline and pending model
 
 Use when: deciding whether a `changed` message is a user edit.
 
@@ -2511,18 +2511,18 @@ private void OnChanged(string json)
 
     _pendingModel = json;
     UpdatePendingLabel();
-    // ... run the validator on the edit (S18) ...
+    // ... run the validator on the edit (SN-18) ...
 }
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:126-186`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` (`OnModelerReady`, `OnImported`, `OnChanged`)
 
 Watch out:
-- PF-WV-07. The comparison only works because the page's export is deterministic (S30).
+- PF-WV-07. The comparison only works because the page's export is deterministic (SN-30).
 - An edit undone back to the baseline arrives as a `changed` equal to the baseline. When the baseline is the document's state (`_baselineIsDocument`), the pending model is cleared, so Update does not write the undone edit (PF-UPD-11). After a restore the baseline holds unsaved edits, and those stay pending.
-- The Ready handler always sends something when there is something to show; it does not ask the bridge about buffered pushes. The bridge drops an older buffered push itself (S37).
+- The Ready handler always sends something when there is something to show; it does not ask the bridge about buffered pushes. The bridge drops an older buffered push itself (SN-37).
 
-### S40 Update button flow
+### SN-40 Update button flow
 
 Use when: writing the canvas back into the document.
 
@@ -2629,7 +2629,7 @@ public static bool TrySave()
 }
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:430-512`; `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/EditorAccess.cs:29-30`, `:74-100`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` (`UpdateButton_Click`, `LargeUpdateConfirmed`); `starter/plugin/Aml.Editor.Plugin.Efl/Bridge/EditorAccess.cs` (`SaveCommands`, `TrySave`)
 
 Watch out:
 - The contract cannot mark a document dirty; save by reflection is best effort, and the log says the command ran, not that the file was written (PF-PLG-08).
@@ -2637,7 +2637,7 @@ Watch out:
 - A modal dialog pumps the dispatcher; a plugin with timers must suppress them while the dialog is open (PF-UPD-09). The starter has no timers.
 - Mapping runs on the UI thread; log timings before a large model makes the editor freeze (PF-UPD-13).
 
-### S41 Settings in APPDATA
+### SN-41 Settings in APPDATA
 
 Use when: remembering user choices between sessions.
 
@@ -2689,13 +2689,13 @@ public sealed class PluginSettings
 }
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/Diagnostics/PluginSettings.cs:13-69`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/Diagnostics/PluginSettings.cs` (`PluginSettings`)
 
 Watch out:
-- Filling the settings controls raises their change events; guard with a flag (`_fillingSettings`, `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:682-707`).
-- The connection style setting only applies to new hierarchies; the updater reads the style from the document (S15). Delete the setting if your language has one encoding per connection type (recipe §3 P6).
+- Filling the settings controls raises their change events; guard with a flag (`_fillingSettings` in `FillSettings` and `Settings_Changed`, `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs`).
+- The connection style setting only applies to new hierarchies; the updater reads the style from the document (SN-15). Delete the setting if your language has one encoding per connection type (recipe §3 P6).
 
-### S42 Log to TEMP and a tab
+### SN-42 Log to TEMP and a tab
 
 Use when: every plugin; a blank panel without a log cannot be diagnosed.
 
@@ -2761,13 +2761,13 @@ private void AppendLogLine(string line) =>
     });
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/Diagnostics/PluginLog.cs:12-85`; `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs:721-728`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/Diagnostics/PluginLog.cs` (`PluginLog`); `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml.cs` (`AppendLogLine`)
 
 Watch out:
 - Subscribed once in the constructor and never removed in `Unloaded`, so the tab keeps updating after tab switches (PF-PLG-20).
-- Page console output reaches this log through the bridge's `log` messages (S32, `ModelerView.cs:259-261`).
+- Page console output reaches this log through the bridge's `log` messages (SN-32, the `MessageType.Log` case in `ModelerView.OnMessage`).
 
-### S43 csproj packaging
+### SN-43 csproj packaging
 
 Use when: building the nupkg the editor installs.
 
@@ -2852,7 +2852,7 @@ Use when: building the nupkg the editor installs.
 </Target>
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl/Aml.Editor.Plugin.Efl.csproj:3-102`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl/Aml.Editor.Plugin.Efl.csproj` (the whole project file, with `<Target Name="VerifyModelerBundle">` and `<Target Name="StageWebView2Loader">`)
 
 Watch out:
 - Contract DLL in the package or plugin folder: the plugin vanishes without a message (PF-CCH-01).
@@ -2861,7 +2861,7 @@ Watch out:
 - `BaseOutputPath` anchored at the project file (PF-PLG-17).
 - Bump the version in the csproj and `Metadata.xml` together (PF-PLG-18).
 
-### S44 Package tests
+### SN-44 Package tests
 
 Use when: checking the nupkg before anybody installs it.
 
@@ -2925,17 +2925,17 @@ public void TheDisplayNameIsUsableAsAnXmlAndWpfName()
 }
 ```
 
-Source: `starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs:18-96`
+Source: `starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs` (`PackageTests`)
 
 Watch out:
-- These tests read the package the last build produced. Run them after `dotnet build` of the plugin (CI does it through `dotnet test` on the solution, S48).
+- These tests read the package the last build produced. Run them after `dotnet build` of the plugin (CI does it through `dotnet test` on the solution, SN-48).
 - Each check stands for a failure that is silent inside the editor: PF-CCH-01, PF-PLG-12, PF-PLG-14, PF-PLG-18, PF-PLG-21.
 
 ---
 
 ## Web app
 
-### S45 Minimal API with 400 and 500 separated
+### SN-45 Minimal API with 400 and 500 separated
 
 Use when: exposing the mapper over HTTP.
 
@@ -2993,13 +2993,13 @@ file sealed class BadRequest(string message) : Exception(message);
 public partial class Program;
 ```
 
-Source: `starter/dotnet/Efl.Web/Program.cs:15-21`, `:41-44`, `:173-215`
+Source: `starter/dotnet/Efl.Web/Program.cs` (the builder setup with `MaxBodyBytes`, the `/api/to-json` endpoint, `Guarded`, `Fail`)
 
 Watch out:
-- The 400 path depends on `EflDocuments.Load` turning non-AML text into a `FormatException` (S16). The end-to-end test posts `<not aml` and expects 400 (`starter/web/tools/verify-webapp.mjs:107-111`).
-- `/api/update` is the lossless direction; `/api/to-aml` builds a new document and loses everything else in the original (`starter/dotnet/Efl.Web/Program.cs:5-8`).
+- The 400 path depends on `EflDocuments.Load` turning non-AML text into a `FormatException` (SN-16). The end-to-end test posts `<not aml` and expects 400 (check 'a broken file is a 400 with a message, not a 500' in `starter/web/tools/verify-webapp.mjs`).
+- `/api/update` is the lossless direction; `/api/to-aml` builds a new document and loses everything else in the original (the header comment of `starter/dotnet/Efl.Web/Program.cs`).
 
-### S46 ASCII-safe info header
+### SN-46 ASCII-safe info header
 
 Use when: returning metadata (warnings, summary, hierarchy names) next to a file body.
 
@@ -3018,13 +3018,13 @@ ctx.Response.Headers["X-Efl-Info"] = JsonSerializer.Serialize(new
 await Text(ctx, "application/json", EflJson.Write(model));
 ```
 
-Source: `starter/dotnet/Efl.Web/Program.cs:49-60`
+Source: `starter/dotnet/Efl.Web/Program.cs` (the `X-Efl-Info` header in the `/api/to-json` endpoint)
 
 Watch out:
 - The default `JsonSerializer` encoder escapes non-ASCII characters, which is what keeps a name with an umlaut from breaking the header. Do not switch to a relaxed encoder here.
 - Cap the list (`Take(5)`) and send the count; headers have size limits.
 
-### S47 Staged bundle target
+### SN-47 Staged bundle target
 
 Use when: serving the modeler bundle from the web app's `wwwroot`.
 
@@ -3063,7 +3063,7 @@ app.UseStaticFiles(new StaticFileOptions
 });
 ```
 
-Source: `starter/dotnet/Efl.Web/Efl.Web.csproj:15-37`; `starter/dotnet/Efl.Web/Program.cs:31-37`
+Source: `starter/dotnet/Efl.Web/Efl.Web.csproj` (`<Target Name="StageModeler">` and the `<PropertyGroup>` before it); `starter/dotnet/Efl.Web/Program.cs` (`UseDefaultFiles`, `UseStaticFiles`)
 
 Watch out:
 - Build order: `npm run build` before any `dotnet build` (PF-CI-05).
@@ -3074,7 +3074,7 @@ Watch out:
 
 ## CI
 
-### S48 Workflow skeleton
+### SN-48 Workflow skeleton
 
 Use when: the repository made from the starter gets CI.
 
@@ -3159,11 +3159,11 @@ jobs:
           fail_on_unmatched_files: true
 ```
 
-Source: `starter/.github/workflows/ci.yml:1-81` (the explanatory comment at `:3-4` left out)
+Source: `starter/.github/workflows/ci.yml` (the explanatory comment at the top left out)
 
 Watch out:
 - Run on every push and pull request, not only on tags (PF-CI-02).
 - Bundle first (PF-CI-05). Steps that pass globs to tools need `shell: bash` on Windows runners (PF-CI-04).
-- The example check needs `*.aml -text` in `.gitattributes` (`starter/.gitattributes:1-2`), or git converts line endings on a Windows checkout and `git diff` reports files the mapper did not change.
+- The example check needs `*.aml -text` in `.gitattributes` (`starter/.gitattributes`), or git converts line endings on a Windows checkout and `git diff` reports files the mapper did not change.
 - If the repository references sibling checkouts, reproduce the local layout in the workflow (PF-CI-01). The starter layout has none.
-- Disable xUnit parallelisation in every test assembly that touches Aml.Engine: `[assembly: CollectionBehavior(DisableTestParallelization = true)]` (`starter/dotnet/Efl.Tests/AssemblyInfo.cs:6`; PF-AML-03).
+- Disable xUnit parallelisation in every test assembly that touches Aml.Engine: `[assembly: CollectionBehavior(DisableTestParallelization = true)]` (`starter/dotnet/Efl.Tests/AssemblyInfo.cs`; PF-AML-03).

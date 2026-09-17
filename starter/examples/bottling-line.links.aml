@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CAEXFile SchemaVersion="3.0" FileName="bottling-line.links.aml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.dke.de/CAEX">
   <SuperiorStandardVersion>AutomationML 2.1</SuperiorStandardVersion>
-  <SourceDocumentInformation OriginName="efl-aml-mapper" OriginID="efl-aml-mapper" OriginVersion="0.1.0" LastWritingDateTime="2026-01-01T01:00:00+01:00" />
+  <SourceDocumentInformation OriginName="efl-aml-mapper" OriginID="efl-aml-mapper" OriginVersion="0.1.0" LastWritingDateTime="2026-01-01T00:00:00Z" />
   <ExternalReference Path="AutomationML_Base_Libraries_AMLEd2_2.11.0.aml" Alias="AutomationMLBaseLibrariesAMLEd22_11_0" />
   <InstanceHierarchy Name="EFL_Diagrams" ID="{67ba7ec4-fdb7-5a0c-bc4d-2ed4ab5df815}">
     <Version>1.0.0</Version>

@@ -61,6 +61,9 @@
     <None Include="$(OutputPath)$(AssemblyName).deps.json" Pack="true" PackagePath="lib\$(TargetFramework)" />
     <None Include="$(OutputPath)Efl.Conversion.dll" Pack="true" PackagePath="lib\$(TargetFramework)" />
     <None Include="Metadata.xml" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The licenses of the bundled modeler code and of WebView2 require their
+         notices to travel with the binaries. Written by web/tools/notices.mjs. -->
+    <None Include="..\..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="" />
 
     <!-- WebView2 assemblies from the NuGet cache. Link makes
          CopyToOutputDirectory work for an absolute Include. -->

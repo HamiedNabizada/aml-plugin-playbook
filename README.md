@@ -23,13 +23,11 @@ Requirements: Windows (for the plugin), .NET 8 SDK, Node 20, and the AutomationM
 
 ```bash
 node tools/new-language.mjs ../my-language-aml Ml "My Language"
-cd ../my-language-aml/web && npm install && npm run build && npx playwright install chromium && npm test
-cd ../dotnet && dotnet test Ml.sln
-cd ../web && npm run test:webapp
-cd ../plugin && dotnet test
 ```
 
-When everything is green, follow [docs/10-new-language-recipe.md](docs/10-new-language-recipe.md) from Phase 1.
+The script prints the commands that build and test the copy and write its example files. Run all of
+them; everything has to pass before you change the language. Then follow
+[docs/10-new-language-recipe.md](docs/10-new-language-recipe.md) from §1.
 
 ## Where this comes from
 
@@ -37,14 +35,14 @@ The playbook distils two projects that map graphical languages to AutomationML a
 
 | Project | Language | Parts |
 |---|---|---|
-| AMLFPB.js ([hsu-aut/AMLFPB.js](https://github.com/hsu-aut/AMLFPB.js)) with [hsu-aut/fpb-aml-mapper](https://github.com/hsu-aut/fpb-aml-mapper) and the FPB.JS modeler ([hsu-aut/FPB.JS](https://github.com/hsu-aut/FPB.JS)) | Formalised Process Description, VDI/VDE 3682 | Plugin, mapper, web app, OCL based validation |
-| AMLPetriNet | Place/transition Petri nets, ISO/IEC 15909, PNML exchange | Plugin, mapper, CLI, web app, PNML conformance checks |
+| AMLFPB.js ([hsu-aut/AMLFPB.js](https://github.com/hsu-aut/AMLFPB.js)) with [hsu-aut/fpb-aml-mapper](https://github.com/hsu-aut/fpb-aml-mapper) and the FPB.JS modeler ([FPB.JS](https://github.com/HamiedNabizada/FPB.JS)) | Formalised Process Description, VDI/VDE 3682 | Plugin, mapper, web app, OCL based validation |
+| AMLPetriNet ([hsu-aut/AMLPetriNet](https://github.com/hsu-aut/AMLPetriNet)) | Place/transition Petri nets, ISO/IEC 15909, PNML exchange | Plugin, mapper, CLI, web app, PNML conformance checks |
 
-The library design follows the three-phase method for representing graphical description languages in AutomationML: analysis of the language (A1 to A4), a semantic domain model (P1 to P3) and instantiation conventions (P4 to P8). It was introduced with the FPD (Drath, Nabizada, Fay, EKA 2026), the FPD domain library is described in Nabizada, Drath, Gehlhoff, Fay (ETFA 2026), and its application to a second language with a cross-language comparison is in Nabizada, Drath, Fay (at Automatisierungstechnik, 2026, forthcoming). Cross-diagram references use the multi-context reference framework of Drath and Nabizada (ETFA 2026).
+The library design follows the three-phase method for representing graphical description languages in AutomationML: analysis of the language (A1 to A4), a semantic domain model (P1 to P3) and instantiation conventions (P4 to P8). It was introduced with the FPD (Drath, Nabizada, Fay, EKA 2026), the FPD domain library is described in Nabizada, Drath, Gehlhoff, Fay (ETFA 2026), and its application to a second language with a cross-language comparison is in Nabizada, Drath, Ocker, Fay (at Automatisierungstechnik, submitted). Cross-diagram references use the multi-context reference framework of Drath and Nabizada (ETFA 2026).
 
 Shared AutomationML libraries:
 
-- OMG_DD AttributeTypeLib 0.1 (`DD_Bounds`, `DD_Point` and `DD_Waypoint`, structured after the OMG Diagram Definition), first published with fpb-aml-mapper and AMLPetriNet. **Included** in [starter/libraries/](starter/libraries/); the starter's mapper embeds it into every document it creates.
+- OMG_DD AttributeTypeLib 0.1 (`DD_Bounds`, `DD_Point` and `DD_Waypoint`, structured after the OMG Diagram Definition), first published with fpb-aml-mapper. **Included** in [starter/libraries/](starter/libraries/); the starter's mapper embeds it into every document it creates.
 - AutomationML ObjectReferences AttributeTypeLib 1.1.1-beta, published by AutomationML. **Not included**, only referenced: obtain it through the library manager of the AutomationML Editor when your language needs cross-diagram references ([the recipe](docs/10-new-language-recipe.md), P3).
 - AutomationML base libraries, AMLEd2 2.11.0. **Not included**; documents reference them by file name.
 
@@ -54,4 +52,9 @@ Shared AutomationML libraries:
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The starter's npm dependencies (diagram-js, diagram-js-direct-editing, min-dash, tiny-svg) are MIT licensed and are bundled into the built modeler; keep their notices when you distribute a build.
+MIT, see [LICENSE](LICENSE).
+
+The starter's built modeler bundles diagram-js and its dependencies (MIT, ISC, and Apache-2.0 for
+htm), and its plugin package contains the WebView2 SDK (Microsoft, BSD-3-Clause style). Their
+notices are in [starter/THIRD-PARTY-NOTICES.md](starter/THIRD-PARTY-NOTICES.md), which the plugin
+package carries; `npm test` in `starter/web` fails when a runtime dependency is missing from it.

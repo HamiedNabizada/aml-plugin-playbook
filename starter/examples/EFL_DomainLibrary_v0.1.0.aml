@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CAEXFile SchemaVersion="3.0" FileName="EFL_DomainLibrary_v0.1.0.aml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.dke.de/CAEX">
   <SuperiorStandardVersion>AutomationML 2.1</SuperiorStandardVersion>
-  <SourceDocumentInformation OriginName="" OriginID="" OriginVersion="" LastWritingDateTime="2026-09-17T00:31:44.4518239+02:00" />
+  <SourceDocumentInformation OriginName="efl-aml-mapper" OriginID="efl-aml-mapper" OriginVersion="0.1.0" LastWritingDateTime="2026-01-01T00:00:00Z" />
   <ExternalReference Path="AutomationML_Base_Libraries_AMLEd2_2.11.0.aml" Alias="AutomationMLBaseLibrariesAMLEd22_11_0" />
   <ExternalReference Path="OMG_DD_AttributeTypeLib_v0.1.aml" Alias="OMG_DD" />
   <InterfaceClassLib Name="EFL_InterfaceClassLib">

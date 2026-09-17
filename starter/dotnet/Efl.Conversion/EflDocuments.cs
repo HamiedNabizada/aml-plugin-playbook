@@ -42,6 +42,34 @@ public static class EflDocuments
     /// </summary>
     public static CAEXDocument LoadFile(string path) => Load(File.ReadAllText(path));
 
+    /// <summary>
+    /// Writes SourceDocumentInformation for a document this mapper creates.
+    ///
+    /// A fixed <paramref name="writtenAt"/> is written as UTC text
+    /// (2026-01-01T00:00:00Z), not through the LastWritingDateTime property:
+    /// Aml.Engine formats that property in the machine's time zone, so the same
+    /// call wrote +01:00 on a developer machine and +00:00 on a CI runner, and a
+    /// check that example files are current failed on the runner only.
+    /// </summary>
+    public static void StampSource(CAEXDocument document, string origin, string version, DateTime? writtenAt)
+    {
+        var information = document.CAEXFile.SourceDocumentInformation.FirstOrDefault()
+            ?? document.CAEXFile.SourceDocumentInformation.Append();
+        information.OriginName = origin;
+        information.OriginID = origin;
+        information.OriginVersion = version;
+
+        if (writtenAt == null)
+        {
+            information.LastWritingDateTime = DateTime.UtcNow;
+            return;
+        }
+
+        var utc = writtenAt.Value.Kind == DateTimeKind.Local ? writtenAt.Value.ToUniversalTime() : writtenAt.Value;
+        information.Node.SetAttributeValue("LastWritingDateTime",
+            utc.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture));
+    }
+
     /// <summary>The document as indented XML text.</summary>
     public static string ToXml(CAEXDocument document)
     {

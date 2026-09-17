@@ -54,7 +54,7 @@ cd web && npm install && npm run build && npx playwright install chromium && npm
 cd ../dotnet && dotnet test <Prefix>.sln
 dotnet run --project <Prefix>.Tool -- to-aml ../examples/bottling-line.json ../examples/bottling-line.links.aml --timestamp 2026-01-01T00:00:00Z
 dotnet run --project <Prefix>.Tool -- to-aml ../examples/bottling-line.json ../examples/bottling-line.elements.aml --style element --timestamp 2026-01-01T00:00:00Z
-dotnet run --project <Prefix>.Tool -- library ../examples/<PREFIX>_DomainLibrary_v0.1.0.aml
+dotnet run --project <Prefix>.Tool -- library ../examples/<PREFIX>_DomainLibrary_v0.1.0.aml --timestamp 2026-01-01T00:00:00Z
 cd ../web && npm run test:webapp
 cd ../plugin && dotnet test
 ```
@@ -156,7 +156,7 @@ The starter implements both only to teach them and to let you test both. **In yo
 
 **P7: DD-based diagram interchange types.** Layout uses `DD_Bounds`, `DD_Point` and `DD_Waypoint` from the shared `OMG_DD_AttributeTypeLib` v0.1 (alias `OMG_DD`), so two languages in one document describe layout the same way. **The starter already does this; there is nothing to switch.** The published file lies in `libraries/OMG_DD_AttributeTypeLib_v0.1.aml` of the copy, is linked into `<Prefix>.Conversion` as an embedded resource, and `<Prefix>DiagramInterchange` embeds it into every document the mapper creates (`EnsureIn`), makes the library artefact reference it by file name (`ReferenceFrom`), and gives every layout attribute its type path in the form the document uses (`PathOf`, `PathIn`: inline `OMG_DD_AttributeTypeLib/DD_Point`, or `<alias>@OMG_DD_AttributeTypeLib/DD_Point` when the document references the file under any alias). The `library` command of `<Prefix>.Tool` writes the OMG_DD file beside the domain library artefact. Keep `DiagramInterchangeTests`; do not declare layout types in `<Prefix>Libraries.cs` and do not edit the library file. See [04-aml-mapping.md](04-aml-mapping.md) §2.8 and §4 and [08-layout.md](08-layout.md).
 
-**Shared libraries in documents.** A reference alone is not enough for documents people open in the AutomationML Editor: the editor does not follow file references, so a document saved anywhere other than next to the library files shows its layout and reference attributes unresolved. AMLPetriNet therefore embeds the two small shared libraries (OMG_DD and ObjectReferences, a few kilobytes) into every document it creates. Embed OMG_DD always: the starter already does (P7). Embed ObjectReferences only if your language uses references (P3), and only from the published file obtained through the AutomationML Editor's library manager, the same way `<Prefix>DiagramInterchange` handles OMG_DD: add the file as an `EmbeddedResource`, insert it unchanged with an `EnsureIn` that leaves a document alone when it already carries or references the library, write every `refObj` type path in the form the document uses, and add a test that the embedded copy equals the file. Never rebuild its types from a description. AMLPetriNet keeps the AML base libraries as a reference by file name (never a URL with a share token or credentials in it: the path is copied into every document you write), and leaves a document that already chose one form alone (`AMLPetriNet: dotnet/PtMapper.Conversion/PtLibraries.cs:28` to `:97`). Do the same, and let the class paths follow whichever form the document uses. **STOP: confirm with the user** if documents of your language are only ever processed by tools that resolve references.
+**Shared libraries in documents.** A reference alone is not enough for documents people open in the AutomationML Editor: the editor does not follow file references, so a document saved anywhere other than next to the library files shows its layout and reference attributes unresolved. AMLPetriNet therefore embeds the two small shared libraries (OMG_DD and ObjectReferences, a few kilobytes) into every document it creates. Embed OMG_DD always: the starter already does (P7). Embed ObjectReferences only if your language uses references (P3), and only from the published file obtained through the AutomationML Editor's library manager, the same way `<Prefix>DiagramInterchange` handles OMG_DD: add the file as an `EmbeddedResource`, insert it unchanged with an `EnsureIn` that leaves a document alone when it already carries or references the library, write every `refObj` type path in the form the document uses, and add a test that the embedded copy equals the file. Never rebuild its types from a description. AMLPetriNet keeps the AML base libraries as a reference by file name (never a URL with a share token or credentials in it: the path is copied into every document you write), and leaves a document that already chose one form alone (`AMLPetriNet: dotnet/PtMapper.Conversion/PtLibraries.cs` (`EnsureLibraries`, `EmbedSharedLibraries`)). Do the same, and let the class paths follow whichever form the document uses. **STOP: confirm with the user** if documents of your language are only ever processed by tools that resolve references.
 
 **P8: explicit or implicit layout.** Can a deterministic layout algorithm produce an acceptable diagram from the structure alone (layered drawing for a directed graph, tree drawing for a tree)? Then stored layout is optional: keep it when present, compute it when missing (`<Prefix>Layout.ArrangeMissing`). If the arrangement carries meaning the language defines no convention for (FPD states placed on a system limit frame), layout must be stored and a missing layout is a finding. This is independent of P6.
 
@@ -260,6 +260,8 @@ Files: `plugin/Aml.Editor.Plugin.<Prefix>/`.
 - Texts in `<Prefix>Plugin.xaml` (placeholder, menu, tooltips).
 - The rest (bridge, update flow, echo baseline, settings, log) is language neutral. Change it only with the reason from [05-editor-plugin.md](05-editor-plugin.md) in hand.
 
+- `THIRD-PARTY-NOTICES.md`: the package redistributes the bundled modeler code and WebView2, whose licenses require their notices. After changing npm dependencies run `npm run notices` in `web/`; `npm test` fails while a runtime dependency is missing from the file, and a package test checks that the file is packed.
+
 Proof: `dotnet test` in `plugin/` (the package tests), then §5.
 
 ### 4.10 CI
@@ -299,6 +301,7 @@ Automated tests cannot load the plugin into the AutomationML Editor. Do this by 
 - [ ] Every validator rule has a broken model test.
 - [ ] Example files written by the tool from the example JSON with `--timestamp`, for each encoding kept, plus the library file and the OMG_DD file beside it; writing them again changes nothing.
 - [ ] Editor protocol §5 passed, editor version noted in the README.
+- [ ] A LICENSE file and the author in the plugin project and `Metadata.xml`; `THIRD-PARTY-NOTICES.md` current.
 - [ ] README of the new repository says what the language is, which decisions were taken in Phase 1 and why, and cites the method.
 
 ## §7 Where to look

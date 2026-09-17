@@ -111,6 +111,9 @@ This README is an outline. Fill it in before the first release (recipe §6):
   embedded shared libraries, rules with severities.
 - How to build, test and install (see the commands the copy script printed).
 - The AutomationML Editor version the plugin was tested with.
+- A LICENSE file and the author: the copy has neither. Replace "Your name" in
+  plugin/*/*.csproj (Authors) and plugin/*/Metadata.xml (Author) before the first package.
+- THIRD-PARTY-NOTICES.md is written by web/tools/notices.mjs; keep it with the package.
 - The method it follows: the three-phase method for representing graphical description
   languages in AutomationML (Nabizada, Drath, Fay).
 `);
@@ -127,7 +130,7 @@ copy does not contain; commit them together with the rest.
   cd ../dotnet && dotnet test ${prefix}.sln
   dotnet run --project ${prefix}.Tool -- to-aml ../examples/bottling-line.json ../examples/bottling-line.links.aml --timestamp 2026-01-01T00:00:00Z
   dotnet run --project ${prefix}.Tool -- to-aml ../examples/bottling-line.json ../examples/bottling-line.elements.aml --style element --timestamp 2026-01-01T00:00:00Z
-  dotnet run --project ${prefix}.Tool -- library ../examples/${upper}_DomainLibrary_v0.1.0.aml
+  dotnet run --project ${prefix}.Tool -- library ../examples/${upper}_DomainLibrary_v0.1.0.aml --timestamp 2026-01-01T00:00:00Z
   cd ../web && npm run test:webapp
   cd ../plugin && dotnet test
 

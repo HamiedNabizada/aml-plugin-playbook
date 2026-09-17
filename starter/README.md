@@ -24,7 +24,7 @@ Layout already uses the shared `OMG_DD_AttributeTypeLib` (`DD_Bounds`, `DD_Point
 |---|---|
 | `web/` | The modeler: diagram-js 15 without moddle. Renderer, rules, palette, context pad, label editing, JSON import and export, SVG export, the WebView2 bridge, an esbuild build, Playwright checks, a screenshot tool |
 | `dotnet/Efl.Conversion/` | The mapper: libraries (own four, OMG_DD embedded from `libraries/`), JSON reader and writer with a format version, model to CAEX and back in both encodings (one node port per connection end), update in place, validator (EFL01 to EFL07), layout of nodes and routing of their flows, deterministic ids, safe AML loading |
-| `dotnet/Efl.Tests/` | Round trip, update, determinism, validator, geometry, layout and layout library tests (45) |
+| `dotnet/Efl.Tests/` | Round trip, update, determinism, validator, geometry, layout and layout library tests (46) |
 | `dotnet/Efl.Web/` | The mapper as a web app: one page with the modeler, and `/api/to-json`, `/api/to-aml`, `/api/update`, `/api/validate`, `/api/library` and `/api/library/layout` (the OMG_DD file it references), `/api/health` |
 | `dotnet/Efl.Tool/` | `eflmap`, the mapper on the command line: `to-aml`, `to-json`, `update`, `validate`, `library`, `arrange`; it prints what it wrote |
 | `plugin/Aml.Editor.Plugin.Efl/` | The AutomationML Editor plugin: WebView2 host, update flow, diagram picker, findings, settings, log, packaging |
@@ -47,13 +47,13 @@ npm run screenshot                # web/screenshots/bottling-line.png and .svg, 
 npm run screenshot -- --arranged  # the same with all layout removed and placed again by eflmap arrange
 
 cd ../dotnet
-dotnet test Efl.sln               # mapper tests (45)
+dotnet test Efl.sln               # mapper tests (46)
 dotnet run --project Efl.Web      # http://localhost:5210
 dotnet run --project Efl.Tool -- to-aml ../examples/bottling-line.json out.aml --style element
 dotnet run --project Efl.Tool -- arrange model-without-layout.json arranged.json
 
 cd ../plugin
-dotnet test                       # builds the package and checks its contents (12 tests)
+dotnet test                       # builds the package and checks its contents (13 tests)
 # install plugin/build/Aml.Editor.Plugin.Efl/Debug/Aml.Editor.Plugin.Efl.0.1.0.nupkg
 # (or Release) through the AutomationML Editor's plugin manager
 ```

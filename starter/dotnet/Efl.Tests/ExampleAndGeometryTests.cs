@@ -36,6 +36,20 @@ public class ExampleAndGeometryTests
     }
 
     [Fact]
+    public void AFixedWritingTimeIsWrittenTheSameInEveryTimeZone()
+    {
+        // The CI check that examples are current compares bytes. Written through
+        // Aml.Engine's property, the time came out in the machine's zone.
+        var at = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+        foreach (var document in new[] { EflToCaex.Convert(RoundTripTests.Sample(), writtenAt: at), EflLibraries.CreateArtefact(at) })
+        {
+            var written = document.CAEXFile.SourceDocumentInformation.Single().Node.Attribute("LastWritingDateTime")?.Value;
+            Assert.Equal("2026-01-01T00:00:00Z", written);
+        }
+    }
+
+    [Fact]
     public void AFileFromANewerFormatVersionIsReadWithAWarning()
     {
         var json = EflJson.Write(RoundTripTests.Sample()).Replace("\"formatVersion\": 1", "\"formatVersion\": 2");

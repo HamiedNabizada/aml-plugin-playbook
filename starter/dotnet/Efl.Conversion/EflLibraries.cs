@@ -104,9 +104,11 @@ public static class EflLibraries
     }
 
     /// <summary>The library artefact as a document of its own, for publishing.</summary>
-    public static CAEXDocument CreateArtefact()
+    /// <param name="writtenAt">A fixed writing time for a file kept in a repository; see <see cref="EflDocuments.StampSource"/>.</param>
+    public static CAEXDocument CreateArtefact(DateTime? writtenAt = null)
     {
         var document = CAEXDocument.New_CAEXDocument();
+        EflDocuments.StampSource(document, "efl-aml-mapper", EflNames.LibraryVersion, writtenAt);
         document.CAEXFile.FileName = "EFL_DomainLibrary_v" + EflNames.LibraryVersion + ".aml";
         EnsureLibraries(document.CAEXFile, embedDiagramInterchange: false);
         return document;

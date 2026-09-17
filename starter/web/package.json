@@ -6,10 +6,11 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "test": "node tools/verify-modeler.mjs && node tools/verify-bridge.mjs",
+    "test": "node tools/notices.mjs --check && node tools/verify-modeler.mjs && node tools/verify-bridge.mjs",
     "test:webapp": "node tools/verify-webapp.mjs",
     "browsers": "playwright install chromium",
-    "screenshot": "node tools/screenshot.mjs"
+    "screenshot": "node tools/screenshot.mjs",
+    "notices": "node tools/notices.mjs"
   },
   "dependencies": {
     "diagram-js": "15.26.0",

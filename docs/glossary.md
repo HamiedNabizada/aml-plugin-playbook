@@ -203,9 +203,9 @@ Read fully when: never; look a term up.
 
 | Group of terms | Chapter | Source to read |
 |---|---|---|
-| CAEX constructs, references, Aml.Engine | [04-aml-mapping.md](04-aml-mapping.md) | `AMLPetriNet: dotnet/PtMapper.Conversion/PtWrite.cs`, `PtCaex.cs`; `AMLPetriNet: libraries/AutomationML_ObjectReferences_AttributeTypeLib_AMLEd2_1.1.1-beta.aml` |
+| CAEX constructs, references, Aml.Engine | [04-aml-mapping.md](04-aml-mapping.md) | `AMLPetriNet: dotnet/PtMapper.Conversion/PtWrite.cs`, `dotnet/PtMapper.Conversion/PtCaex.cs`; `AMLPetriNet: libraries/AutomationML_ObjectReferences_AttributeTypeLib_AMLEd2_1.1.1-beta.aml` |
 | Layout types | [08-layout.md](08-layout.md) | `starter/libraries/OMG_DD_AttributeTypeLib_v0.1.aml`, `starter/dotnet/Efl.Conversion/EflDiagramInterchange.cs` |
 | diagram-js | [02-modeler-diagram-js.md](02-modeler-diagram-js.md) | `starter/web/src/EflModeler.js`, `starter/web/src/rules/Rules.js` |
-| Plugin contract, WebView2, bridge | [05-editor-plugin.md](05-editor-plugin.md) | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `Bridge/PtWebView.cs` |
+| Plugin contract, WebView2, bridge | [05-editor-plugin.md](05-editor-plugin.md) | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `Aml.Editor.Plugin.PetriNet/Bridge/PtWebView.cs` |
 | Exchange format, tolerant reading | [03-exchange-format.md](03-exchange-format.md) | `AMLPetriNet: dotnet/PtMapper.Conversion/Models/PtModels.cs` |
 | Method terms, starter, stop points | [10-new-language-recipe.md](10-new-language-recipe.md) | `starter/README.md`, `tools/new-language.mjs` |

@@ -5,7 +5,7 @@
 //   eflmap to-json   <in.aml> <out.json> [--hierarchy NAME]
 //   eflmap update    <in.aml> <model.json> <out.aml> [--hierarchy NAME]
 //   eflmap validate  <model.json|in.aml>
-//   eflmap library   <out.aml>
+//   eflmap library   <out.aml> [--timestamp 2026-01-01T00:00:00Z]
 //   eflmap arrange   <model.json> <out.json>     places nodes and flows that have no layout
 //
 // --timestamp fixes the time written into the document. Use it for files kept in
@@ -96,7 +96,7 @@ static int Run(string[] args)
         }
         case "library" when positional.Count == 2:
         {
-            var document = EflLibraries.CreateArtefact();
+            var document = EflLibraries.CreateArtefact(Timestamp(Option("timestamp")));
             Save(document, positional[1]);
             Console.WriteLine($"wrote {positional[1]}: library version {EflNames.LibraryVersion}");
 

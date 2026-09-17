@@ -11,7 +11,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write   # the release step on a version tag
+  contents: read
 
 jobs:
   windows:
@@ -52,6 +52,7 @@ jobs:
           T="dotnet run --project Efl.Tool -c Release --"
           $T to-aml ../examples/bottling-line.json ../examples/bottling-line.links.aml --timestamp 2026-01-01T00:00:00Z
           $T to-aml ../examples/bottling-line.json ../examples/bottling-line.elements.aml --style element --timestamp 2026-01-01T00:00:00Z
+          $T library ../examples/EFL_DomainLibrary_v0.1.0.aml --timestamp 2026-01-01T00:00:00Z
           git diff --exit-code -- ../examples
 
       - name: Test the modeler and the bridge in a browser
@@ -72,10 +73,29 @@ jobs:
           name: plugin-nupkg
           path: plugin/build/Aml.Editor.Plugin.Efl/Release/*.nupkg
 
-      - name: Publish a release for a version tag
-        if: startsWith(github.ref, 'refs/tags/v')
+  release:
+    # Only this job may write, and only for a version tag that matches the
+    # package version.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: windows
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugin-nupkg
+          path: nupkg
+
+      - name: Check that the tag matches the package version
+        shell: bash
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          ls nupkg/*."${version}".nupkg >/dev/null 2>&1 || { ls nupkg; echo "no package for version ${version}"; exit 1; }
+
+      - name: Publish the release
         uses: softprops/action-gh-release@v2
         with:
-          files: plugin/build/Aml.Editor.Plugin.Efl/Release/*.nupkg
+          files: nupkg/*.nupkg
           generate_release_notes: true
           fail_on_unmatched_files: true

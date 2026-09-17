@@ -10,6 +10,17 @@ on:
     branches: [main]
 
 jobs:
+  documents:
+    # No line numbers, commit hashes or branch names of other repositories, no
+    # paths into the starter that do not exist, no broken relative links.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node tools/check-docs.mjs
+
   starter:
     runs-on: windows-latest
     defaults:
@@ -47,6 +58,7 @@ jobs:
           T="dotnet run --project Efl.Tool -c Release --"
           $T to-aml ../examples/bottling-line.json ../examples/bottling-line.links.aml --timestamp 2026-01-01T00:00:00Z
           $T to-aml ../examples/bottling-line.json ../examples/bottling-line.elements.aml --style element --timestamp 2026-01-01T00:00:00Z
+          $T library ../examples/EFL_DomainLibrary_v0.1.0.aml --timestamp 2026-01-01T00:00:00Z
           git diff --exit-code -- ../examples
 
       - name: Test the modeler and the bridge
