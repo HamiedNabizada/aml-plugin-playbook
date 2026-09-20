@@ -300,30 +300,33 @@ Cases every reader must handle, with the source behaviour:
 **The modeler's importer needs the same tolerance.** It should skip an id without data with a
 warning, drop a connection with an unresolved end and undo the half-wired side, draw a straight
 line for a connection without waypoints, work on a copy of the input, and replace the model on
-every import rather than append to it. FPB.JS's importer shows both sides. It replaces the model
-on every import (the import request handler in `JSONImporter` empties `_processes` first) and
-degrades a dangling `decomposedView` to a non-decomposed operator instead of leaving a string
-that crashes later consumers (`FPB.JS: app/fpb/importer/JSONImporter.js`, `updateDepedencies`).
-But an id without data reaches the branch for technical resources and usages, which dereferences
-the missing visual entry, and the error handler then aborts the whole import (`filterElements`,
-`buildTRandUsage`); and it builds by removing entries from the caller's arrays, so the input is
-consumed (`filterElements`).
+every import rather than append to it. FPB.JS's importer does all of that, and collects the
+warnings into one report for the user (`FPB.JS: app/fpb/importer/ImportErrors.js`, `startReport`,
+`finishReport`). In `FPB.JS: app/fpb/importer/JSONImporter.js`, the import request handler in
+`JSONImporter` works on a copy (`cloneImportData`), resolves the new processes before it drops the
+previous model (`resetModelState`), and runs `removeUnconnectedConnections`,
+`completeConnectionWaypoints` and `mirrorWaypointsToDi` per process. `filterElements` skips an id
+without data with a warning, and `updateDepedencies` degrades a dangling `decomposedView` to a
+non-decomposed operator instead of leaving a string that crashes later consumers.
 
-Parts of that importer are strict, and the mapper has to compensate:
+**Arrange missing layout in one place, and never invent geometry in two.** FPB.JS and
+fpb-aml-mapper show the split that works. The mapper emits only the layout the AML stores: a
+connection gets a visual entry only when the document holds at least two points for it, and a
+SystemLimit without visual data gets no default bounds
+(`fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs`, `ParseProcess`, `BuildWaypoints`;
+`fpb-aml-mapper: dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs`, `AddElement`, `BuildProcess`;
+`fpb-aml-mapper: dotnet/FpbMapper.Tests/LayoutFreeConversionTests.cs`,
+`Convert_WithoutAnyLayout_EmitsNoVisualInformationButAllData`). The modeler arranges every process
+that lacks layout before it builds shapes and warns per process how many elements it placed (the
+import request handler calls `needsLayout` and `layoutImportData` from
+`FPB.JS: app/fpb/layout/AutoLayout.js`); `layoutImportData` also adds a missing
+`elementVisualInformation` list, which `ValidationUtils.validateProcessData` requires
+(`FPB.JS: app/fpb/importer/ImportUtils.js`). A mapper that
+synthesizes lines instead makes an import look complete, so the modeler never gets the chance to
+arrange it, and the invented line is written back into the document on the next sync.
 
-- `validateProcessData` rejects a process without `elementVisualInformation`
-  (`FPB.JS: app/fpb/importer/ImportUtils.js`, `ValidationUtils.validateProcessData`), and the
-  importer dereferences the visual entry of every connection
-  (`FPB.JS: app/fpb/importer/JSONImporter.js`, `buildSystemLimitFlow`). Layout-free AML would
-  produce an empty canvas, so the mapper always emits a visual entry with at least two
-  waypoints, synthesized from shape centre to shape centre when the AML stores none
-  (`fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs`, `ParseProcess`,
-  `FallbackWaypoints`; `fpb-aml-mapper: dotnet/FpbMapper.Tests/WaypointFallbackTests.cs`,
-  `Convert_WithoutAnyLayout_StillEmitsTwoWaypointsPerConnection`). The cost of that compensation:
-  invented geometry makes an import look complete, so a modeler that learns to arrange missing
-  layout never gets the chance, and the invented line is written back into the document on the
-  next sync. Arrange missing layout in one place, either the modeler or the mapper, and never
-  invent geometry in two.
+One part of that importer is still strict, and the mapper has to compensate:
+
 - `buildCharacteristics` dereferences `ch.category.$type`, `ch.descriptiveElement.setpointValue.$type`
   and `ch.relationalElement.$type` without guards
   (`FPB.JS: app/fpb/importer/JSONImporter.js`, `buildCharacteristics`). The mapper must emit
@@ -335,8 +338,9 @@ Lesson: a strict reader on one side forces the writer on the other side to encod
 reader's crash conditions. Fix the reader instead, and keep a test on the writer side that
 pins the contract.
 
-**Fallbacks must be deterministic.** FPB.JS positions an element without visual data at a
-random offset (`FPB.JS: app/fpb/importer/ImportUtils.js`, `VisualUtils.createFallbackVisualInfo`).
+**Fallbacks must be deterministic.** FPB.JS still keeps a random offset for a shape that reaches
+`buildSystemLimitShapes` without visual data, which the layout step normally prevents
+(`FPB.JS: app/fpb/importer/ImportUtils.js`, `VisualUtils.createFallbackVisualInfo`).
 A random fallback makes two imports of the same file differ, which defeats echo detection
 (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `OnDiagramChanged`) and golden tests.
 
@@ -499,12 +503,11 @@ waypoint list including endpoints and an `original` point
 (`fpb-aml-mapper: dotnet/FpbMapper.Conversion/Models/FpbModels.cs`, `VisualInfo`, `WaypointInfo`).
 The mapper builds the list from the port coordinates and waypoints the AML stores
 (`fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs`, `BuildWaypoints`). When the AML
-has fewer than two, it synthesizes centre-to-centre points in the same shape, `original`
-included, and the write side stores them as port coordinates, so the next read reproduces them
-and echo cycles stay idempotent (`CaexToFpbJson.cs`, `FallbackWaypoints` and its comment; see
-section 5 for why this compensation has a cost). A modeler that keeps waypoints on a separate DI
-object as well must mirror imported waypoints into it, or an untouched connection keeps a DI edge
-without waypoints.
+has fewer than two, the connection gets no visual entry, and the modeler routes it while
+arranging on import (`ParseProcess` and its comment; section 5). A modeler that keeps waypoints on
+a separate DI object as well must mirror imported waypoints into it, or an untouched connection
+keeps a DI edge without waypoints; FPB.JS does so on import
+(`FPB.JS: app/fpb/importer/JSONImporter.js`, `mirrorWaypointsToDi`).
 
 The starter follows the PNML decision for its JSON: a flow stores bend points only
 (`starter/dotnet/Efl.Conversion/Models.cs`, `EflFlow.Waypoints`; `starter/web/src/io/json.js`,
@@ -579,11 +582,9 @@ syncing stores the generated layout"). See [08 Layout](08-layout.md).
   words (`Read` in the same file).
 - **A custom JSON needs a version field from the first release.** The FPB.JS JSON has none:
   the importer checks only for a project definition with `name` and `targetNamespace`
-  (`FPB.JS: app/fpb/importer/ImportUtils.js`, `ValidationUtils.validateProjectDefinition`). A
-  planned breaking v2 (object root,
-  flat element lists, structured characteristics, own ids for boundary states and
-  sub-processes) therefore has to tell v1 from v2 by shape, and its v1 to v2 migrator is
-  still open.
+  (`FPB.JS: app/fpb/importer/ImportUtils.js`, `ValidationUtils.validateProjectDefinition`). Any
+  breaking change to that format (an object root, flat element lists, structured
+  characteristics) therefore has to tell the old from the new format by its shape.
 - **The starter shows the minimal version field.** Both writers put `"formatVersion": 1` first,
   so a file written on either side diffs cleanly against the other
   (`starter/dotnet/Efl.Conversion/EflJson.cs`, class comment of `EflJson` and `Write`;
@@ -616,7 +617,7 @@ syncing stores the generated layout"). See [08 Layout](08-layout.md).
 |---|---|---|---|
 | FPB characteristics: setpoint value, validity limits and actual values vanished on JSON to AML (a setpoint of 20 °C arrived as an empty string) | The mapper modelled them as `string`; the helper that reads strings returns `""` for objects and arrays (`fpb-aml-mapper: dotnet/FpbMapper.Conversion/Models/FpbModels.cs`, `GetStringProp`). The reverse path wrote flat untyped values, which the FPB.JS importer skips or crashes on | A structured review of the internal model before the JSON v2 redesign flagged it; it was then confirmed empirically by pushing a model with a known setpoint through the mapper and inspecting the CAEX attribute | Structured types end to end (`FpbModels.cs`: `DescriptiveElement`, `ValueWithUnit`, `ValidityLimit`, `ParseValueWithUnit`, `ParseValueWithUnitList`, `ParseValidityLimits`), `$type` tags on the way back (`CaexToFpbJson.cs`: `ParseCharacteristics`, `ReadValueWithUnit`, `ReadValidityLimits`, `ReadActualValues`), regression tests `JsonToAml_PreservesCharacteristicValues` and `Roundtrip_PreservesCharacteristicSetpointAndType` (`fpb-aml-mapper: dotnet/FpbMapper.Tests/ConversionTests.cs`) |
 | FPB decomposition hierarchy read flat from the running editor | Live export serialized `parent` and `isDecomposedProcessOperator` as objects; the reader expected strings | Files from the editor behaved differently from test fixtures | Accept both forms (`fpb-aml-mapper: dotnet/FpbMapper.Conversion/Models/FpbModels.cs`, `GetIdRefProp`). Guard: use real editor exports as fixtures, not only hand-written JSON |
-| Empty canvas for layout-free AML | FPB.JS importer requires a visual entry per connection | Opening hand-authored engineering AML | The mapper always emits a visual entry with two waypoints and default bounds for a system limit without visual data (`fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs`, `FallbackWaypoints`; `dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs`, `AddElement`, `BuildProcess`), guarded by `fpb-aml-mapper: dotnet/FpbMapper.Tests/WaypointFallbackTests.cs`. The importer itself stays strict (section 5), so the invented geometry is not told apart from drawn geometry |
+| Empty canvas for layout-free AML | FPB.JS importer required a visual entry per connection | Opening hand-authored engineering AML | The modeler arranges what lacks layout on import and reports it (`FPB.JS: app/fpb/layout/AutoLayout.js`, `needsLayout`, `layoutImportData`, called from the import request handler in `FPB.JS: app/fpb/importer/JSONImporter.js`); the mapper emits only stored layout and no default bounds (`fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs`, `ParseProcess`; `dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs`, `AddElement`, `BuildProcess`), guarded by `fpb-aml-mapper: dotnet/FpbMapper.Tests/LayoutFreeConversionTests.cs`, so drawn geometry and arranged geometry are not mixed up (section 5) |
 | Every arc renamed to its GUID after one Update | The modeler's PNML importer dropped arc names | Only a real-browser session test showed it; C# tests passed | `AMLPetriNet: web/src/pnml/index.js` (`convertPnmlXmlToModdleXml`, arc loop); `docs/roundtrip-validation.md` (section "5. Opening the net in the editor and syncing stores the generated layout") |
 | Arc label position lost for weight 1 | Default-omission removed the annotation that held the offset | Foreign PNML (Freiburg process editor) | `AMLPetriNet: dotnet/PtMapper.Conversion/Pnml.cs` (`Write`), test `AnArcWithTheDefaultWeightKeepsAPlacedLabel` (`AMLPetriNet: dotnet/PtMapper.Tests/IdentityAndSessionTests.cs`) |
 | Duplicate element after round trip | Invalid foreign file with a duplicate id | Foreign PNML (jbpt) | `PtIdText.MakeIdsDistinct`, test `APnmlFileThatUsesAnIdTwiceComesBackUnchangedFromAml` (`AMLPetriNet: dotnet/PtMapper.Tests/IdentityAndSessionTests.cs`) |
@@ -718,8 +719,9 @@ Patterns behind these findings:
 | Result with warnings | `fpb-aml-mapper: dotnet/FpbMapper.Conversion/ConversionResult.cs` |
 | Golden snapshots with GUID canonicalization | `fpb-aml-mapper: dotnet/FpbMapper.Tests/GoldenTests.cs` |
 | Characteristics, id stability, schema migration, validation tests | `fpb-aml-mapper: dotnet/FpbMapper.Tests/ConversionTests.cs` |
-| Layout-free AML: fallback waypoints for the strict importer | `fpb-aml-mapper: dotnet/FpbMapper.Tests/WaypointFallbackTests.cs` |
+| Layout-free AML: only stored layout is emitted | `fpb-aml-mapper: dotnet/FpbMapper.Tests/LayoutFreeConversionTests.cs` |
 | FPB.JS JSON importer | `FPB.JS: app/fpb/importer/JSONImporter.js` |
+| FPB.JS layout of import data that lacks it | `FPB.JS: app/fpb/layout/AutoLayout.js` |
 | FPB.JS import validation and fallbacks | `FPB.JS: app/fpb/importer/ImportUtils.js` |
 | FPB.JS JSON export replacer | `FPB.JS: app/fpb/layer-panel/components/DownloadModal.js` |
 | FPB.JS facade import/export API | `FPB.JS: src/index.js` |

@@ -70,7 +70,7 @@ This file complements the chapters: the chapters say what to do, this file says 
 - **Options:** (a) build a modeler; (b) fork the existing one; (c) depend on the published package at an exact version and customise it from outside (extra module code, guarded prototype patches, a bundler alias for one dependency). The older `ptn-js` package was deprecated in favour of its successor (notes only).
 - **Decision:** (c) for AMLPetriNet. The starter is a small modeler of its own, because a toy language has no existing modeler.
 - **Consequences:** Every upstream defect found in testing needs a patch with a reason and a guard against double wrapping (D-60). Upgrading the package means re-running the browser checks.
-- **Evidence:** `AMLPetriNet: README.md` (section "Modeler"); `AMLPetriNet: web/package.json` (dependency `@bptlab/openbpt-modeler-petri-net`); `AMLPetriNet: web/src/index.js` (the `UpdatePropertyHandler.$inject` patch and the guarded `UpdateLabelHandler.prototype.postExecute` wrapper `postExecuteScopedToArcs`).
+- **Evidence:** `AMLPetriNet: README.md` (section "License": the modeler is used as a package and extended in `web/src/`); `AMLPetriNet: web/package.json` (dependency `@bptlab/openbpt-modeler-petri-net`); `AMLPetriNet: web/src/index.js` (the `UpdatePropertyHandler.$inject` patch, the guarded `UpdateLabelHandler.prototype.postExecute` wrapper `postExecuteScopedToArcs`, and `drawTokensAsDots`, which wraps the renderer's `renderMarking` without touching the marking).
 - **Status:** in force.
 
 ### D-06 A separate plugin and repository per language
@@ -518,9 +518,9 @@ This file complements the chapters: the chapters say what to do, this file says 
 
 - **Context:** PNML files from other tools and hand-authored AML often carry no layout; every node landed at the origin. For FPD, placement on the system limit carries meaning no layout convention defines.
 - **Options:** require stored layout; compute it on import and before display, never moving a node that has bounds (pattern P8).
-- **Decision:** P/T nets: arrange missing positions at import and before display, tell the user how many were placed. FPD: layout is stored; for a layout-free document the mapper supplies fallback geometry so that the modeler can import it at all (D-54).
+- **Decision:** P/T nets: arrange missing positions at import and before display, tell the user how many were placed. FPD: layout is stored; for a layout-free document the modeler arranges what is missing on import, and the mapper emits only what the document stores (D-54).
 - **Consequences:** An editor session on a layout-free document writes the computed layout into it; that is the one intended difference between an editor round trip and a mapper round trip.
-- **Evidence:** `AMLPetriNet: dotnet/PtMapper.Conversion/PtLayout.cs` (class comment on `PtLayout`, `ArrangeMissing`); `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs` (`PrepareForDisplay`).
+- **Evidence:** `AMLPetriNet: dotnet/PtMapper.Conversion/PtLayout.cs` (class comment on `PtLayout`, `ArrangeMissing`); `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs` (`PrepareForDisplay`); `FPB.JS: app/fpb/layout/AutoLayout.js` (header comment, `needsLayout`, `layoutImportData`).
 - **Status:** in force.
 
 ### D-53 Layered layout with cycle breaking from marked places
@@ -532,14 +532,14 @@ This file complements the chapters: the chapters say what to do, this file says 
 - **Evidence:** `AMLPetriNet: dotnet/PtMapper.Conversion/PtLayout.cs` (`AssignColumns`, `BackEdges`, `Defects`, `RouteBackEdges`).
 - **Status:** in force; earlier variants superseded.
 
-### D-54 A layout-free FPD document gets fallback geometry from the mapper; arrange in one place only
+### D-54 A layout-free FPD document is arranged by the modeler; arrange in one place only
 
-- **Context:** The FPB.JS importer reads the visual entry of every connection unconditionally; a layout-free AML without such entries aborts the whole import and leaves an empty canvas.
-- **Options:** have the mapper always emit a visual with at least two waypoints (and write default bounds for a SystemLimit without visual data); let the modeler arrange whatever arrives without layout; both.
-- **Decision:** The mapper supplies the geometry. When a link carries no stored waypoints, fpb-aml-mapper emits a straight line from the stored port coordinates, or else from the centres of the two shapes. The fallback points carry the same `original` substructure as port-derived points, because the writer persists them as port coordinates and the next read has to reproduce them, or the echo cycle drifts. A SystemLimit without visual data gets default bounds on write, and so does the SystemLimit of a brand new empty hierarchy. FPB.JS does not arrange missing layout.
-- **Consequences:** After the first Update the document holds geometry nobody drew. Invented geometry also stands in the way of a later automatic layout: an import that looks complete is never arranged. Arrange missing layout in exactly one place, either the modeler or the mapper, and never invent geometry in two. If the modeler arranges, the mapper must emit only the layout the document stores; a mapper-only consumer (a CLI, a web converter) then shows such a document without positions until a modeler opens it.
-- **Evidence:** `fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs` (`ParseProcess`, which calls `FallbackWaypoints` when `BuildWaypoints` returns fewer than two points; the comment in `FallbackWaypoints` on the `original` shape); `fpb-aml-mapper: dotnet/FpbMapper.Tests/WaypointFallbackTests.cs` (class comment on `WaypointFallbackTests`, `Convert_WithoutConnectionLayout_EveryConnectionGetsFallbackWaypoints`, `Convert_WithoutAnyLayout_StillEmitsTwoWaypointsPerConnection`); `fpb-aml-mapper: dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs` (`AddElement` and `BuildProcess`, the default SystemLimit bounds; `CreateEmptyFpdInstanceHierarchy`); `FPB.JS: app/fpb/importer/JSONImporter.js` (`buildSystemLimitFlow`, which takes `waypoints` from the visual entry).
-- **Status:** in force (fpb-aml-mapper); arranging in exactly one place is the rule.
+- **Context:** A layout-free AML carries no visual entries. An FPB.JS importer that reads the visual entry of every connection unconditionally aborts the whole import on such a file and leaves an empty canvas.
+- **Options:** have the mapper always emit a visual with at least two waypoints (and write default bounds for a SystemLimit without visual data); let the modeler arrange whatever arrives without layout; both. The mapper fallback was built first: straight lines from port coordinates or shape centres, persisted as port coordinates on the next Update.
+- **Decision:** The modeler arranges. fpb-aml-mapper emits only the layout the document stores: a link without stored waypoints gets no visual entry, and a SystemLimit without visual data gets no default bounds on write. FPB.JS checks import data for missing shape or connection visuals, lays out whatever is missing with a layered layout that follows the VDI 3682 drawing conventions, keeps existing positions, and warns per process how many elements it placed. Only the SystemLimit of a brand new empty hierarchy still gets default bounds from the mapper.
+- **Consequences:** Invented geometry stands in the way of an automatic layout: an import that looks complete is never arranged, and after the first Update the document holds geometry nobody drew. Arrange missing layout in exactly one place, either the modeler or the mapper, and never invent geometry in two. Because the modeler arranges, a mapper-only consumer (a CLI, a web converter) shows such a document without positions until a modeler opens it.
+- **Evidence:** `fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs` (`ParseProcess`, the comment above the `BuildWaypoints` call: only stored layout is emitted); `fpb-aml-mapper: dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs` (`AddElement` and `BuildProcess`, the comments on why a SystemLimit without visual data gets no ViewInformation; `CreateEmptyFpdInstanceHierarchy`, the default bounds); `fpb-aml-mapper: dotnet/FpbMapper.Tests/LayoutFreeConversionTests.cs` (class comment on `LayoutFreeConversionTests`, `Convert_WithoutConnectionLayout_ConnectionsGetNoVisual_ShapesKeepTheirs`, `Convert_WithoutAnyLayout_EmitsNoVisualInformationButAllData`); `FPB.JS: app/fpb/importer/JSONImporter.js` (the `needsLayout` and `layoutImportData` calls with the per-process warning; `completeConnectionWaypoints`); `FPB.JS: app/fpb/layout/AutoLayout.js` (header comment, `needsLayout`, `layoutImportData`); `FPB.JS: tests/unit/layout/AutoLayout.test.js` (the `describe` blocks for `layoutImportData()` without any and with partial visual information).
+- **Status:** in force; arranging in exactly one place is the rule.
 
 ### D-55 Docking points computed on both sides and stored
 
@@ -653,9 +653,9 @@ This file complements the chapters: the chapters say what to do, this file says 
 
 - **Context:** The editor shows the `ToolBarCommands` of one plugin at a time. With both plugins installed the FPD commands appeared inside the Petri net tab; with one plugin New and Import appeared twice.
 - **Options:** `IToolBarIntegration`; a toolbar inside the view with Update and Refresh as buttons and occasional commands in one drop-down menu, plus buttons on the empty placeholder.
-- **Decision:** In the view, without `IToolBarIntegration` (AMLPetriNet, starter). AMLFPB.js still implements `IToolBarIntegration` and puts New Process and Import FPB.js on the editor toolbar, so with both plugins installed its commands can still show up in the other plugin's tab.
-- **Evidence:** `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs` (constructor `PetriNetPlugin`, `NewNetItem` and `ImportPnmlItem`); `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml` (the `ToolBar` and the comment above it); `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs` (`FpbPlugin` implementing `IToolBarIntegration`, `ToolBarCommands`).
-- **Status:** differs between projects; commands in the view recommended.
+- **Decision:** In the view, without `IToolBarIntegration` (AMLPetriNet, AMLFPB.js, starter). AMLFPB.js puts New Process, Import FPB.js JSON, Export JSON and Export Conformance Report into a Process menu in each hierarchy tab, and New Process and Import also as buttons on the empty placeholder, all bound to the same command objects.
+- **Evidence:** `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs` (constructor `PetriNetPlugin`, `NewNetItem` and `ImportPnmlItem`); `starter/plugin/Aml.Editor.Plugin.Efl/EflPlugin.xaml` (the `ToolBar` and the comment above it); `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs` (the class declaration of `FpbPlugin`; `_newProcessCommand`, `_importCommand` and the comment above them in the constructor `FpbPlugin`); `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml` (`PlaceholderNewProcessButton`, `PlaceholderImportButton`); `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml` (`ProcessMenuButton` and the comment above it); `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs` (`UseDocumentCommands`, `ProcessMenuButton_Click`).
+- **Status:** in force.
 
 ### D-67 Save after Update as a setting, and a confirmation for large updates
 
@@ -753,7 +753,7 @@ This file complements the chapters: the chapters say what to do, this file says 
 - **Context:** The FPD web mapper is a Node reverse proxy serving the page and forwarding `/api/*` to a separate .NET API on another host.
 - **Options:** proxy plus API on different origins; one ASP.NET Core app serving page, bundle and API.
 - **Decision:** One process; no CORS and no proxy needed, runs on any host with ASP.NET Core, can be put under a path of another site by a reverse proxy.
-- **Evidence:** `AMLPetriNet: dotnet/PtMapper.Web/Program.cs` (header comment); `fpb-aml-mapper: server.js` (the `/api/:direction` route that proxies to the .NET backend).
+- **Evidence:** `AMLPetriNet: dotnet/PtMapper.Web/Program.cs` (header comment); `fpb-aml-mapper: server.js` (the `/api/:direction` route that proxies to the .NET backend; the `/pt` route, which passes every request unchanged to the Petri net app, so that app runs under a path of the FPD site).
 - **Status:** differs between projects; one process recommended.
 
 ### D-78 A lossless update endpoint
@@ -768,8 +768,8 @@ This file complements the chapters: the chapters say what to do, this file says 
 
 - **Context:** Behind the hosting front end every client shared one limiter bucket keyed on the front end's address; static files consumed permits; a refused request came back with an empty body.
 - **Options:** global limiter on the remote address; forwarded headers before the limiter, limiter only on `/api`, a rejection body.
-- **Decision:** The latter.
-- **Evidence:** `AMLPetriNet: dotnet/PtMapper.Web/Program.cs` (`AddRateLimiter` with `ApiPolicy` and `OnRejected`; `UseForwardedHeaders`; `RequireRateLimiting(ApiPolicy)` on the API endpoints).
+- **Decision:** The latter. A reverse proxy on another host is one caller as well, so the app takes the visitor from the proxy's `X-Client-Address` header, but only when the proxy proves itself with a key both sides hold (`PT_PROXY_KEY`, compared in constant time); without the key the header is ignored, so nobody can choose their own bucket.
+- **Evidence:** `AMLPetriNet: dotnet/PtMapper.Web/Program.cs` (`AddRateLimiter` with `ApiPolicy` and `OnRejected`; `ClientAddress` and the comment above `proxyKey`; `UseForwardedHeaders`; `RequireRateLimiting(ApiPolicy)` on the API endpoints); `AMLPetriNet: README.md` (section "Web application"); `fpb-aml-mapper: server.js` (`PT_PROXY_KEY` and the `/pt` route).
 - **Status:** in force.
 
 ### D-80 One load helper that refuses non-AML text
@@ -812,8 +812,8 @@ This file complements the chapters: the chapters say what to do, this file says 
 
 - **Context:** The arc name loss (D-47) passed every C# test, because those went PNML to model to PNML in C# only; the host-facing surface of the page was untested.
 - **Options:** C# round trips only; a stand-in `window.chrome.webview` installed before page scripts to drive the real protocol, and an editing session through the real modeler followed by the C# comparison.
-- **Decision:** Both browser tests in CI.
-- **Evidence:** `AMLPetriNet: web/tools/verify-bridge.mjs` (the `addInitScript` stand-in for `window.chrome.webview`); `AMLPetriNet: web/tools/verify-paper-session.mjs` (header comment).
+- **Decision:** Both browser tests. The bridge test runs in CI as part of `npm test`; the session script needs a running web mapper and runs before a release.
+- **Evidence:** `AMLPetriNet: web/package.json` (script `test`); `AMLPetriNet: web/tools/verify-bridge.mjs` (the `addInitScript` stand-in for `window.chrome.webview`); `AMLPetriNet: web/tools/verify-paper-session.mjs` (header comment).
 - **Status:** in force.
 
 ### D-85 Validate written PNML against the official grammar
@@ -861,6 +861,7 @@ This file complements the chapters: the chapters say what to do, this file says 
 | Libraries in documents | `AMLPetriNet: dotnet/PtMapper.Conversion/PtLibraries.cs`, `PtLibraryLoan.cs`, `PtDiPaths.cs` | `EnsureLibraries`, `EmbedSharedLibraries`; `PtLibraryLoan`, `AliasInUse`; `PtDiPaths` |
 | Reference typing, boundary states | `fpb-aml-mapper: dotnet/FpbMapper.Conversion/MapperOptions.cs`, `FpbJsonToCaex.cs`, `CaexToFpbJson.cs` | `UseObjectReferencesLibrary`; `DeriveBoundaryStateId`, `RemapSubProcessBoundaryStateIds`, `StripBraces`; `ParseProcess` |
 | Layout | `AMLPetriNet: dotnet/PtMapper.Conversion/PtLayout.cs` | `ArrangeMissing`, `AssignColumns`, `BackEdges`, `Defects`, `RouteBackEdges` |
+| Layout on import for FPD | `FPB.JS: app/fpb/layout/AutoLayout.js`; `fpb-aml-mapper: dotnet/FpbMapper.Tests/LayoutFreeConversionTests.cs` | `needsLayout`, `layoutImportData`; `LayoutFreeConversionTests` |
 | Plugin lifecycle and echo detection | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`; `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `Views/IhView.xaml.cs` | `PetriNetPlugin` (constructor), `OnDiagramChanged`, `DocumentLoaded`, `IsSameDocument`; `_rebuildGeneration`, `IsAlreadyRebuilt`; `_echoBaseline`, `LiveSyncTick` |
 | Modeler patches and bridge | `AMLPetriNet: web/src/index.js`, `web/src/bridge.js`, `web/build.mjs` | `postExecuteScopedToArcs`, `nameTransitionsBelow`; `connectBridge`, `scheduleChange`, `runImport`; `minify: false`, `alias` |
 | Packaging | `AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.Editor.Plugin.PetriNet.csproj`; `starter/plugin/Aml.Editor.Plugin.Efl.Tests/PackageTests.cs` | `BaseOutputPath`, `StageWebView2Loader`, `VerifyPtnJsDist`; `ThePackageDoesNotShipTheContractAssembly`, `TheDisplayNameIsUsableAsAnXmlAndWpfName` |

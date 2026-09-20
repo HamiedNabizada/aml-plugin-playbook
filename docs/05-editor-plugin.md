@@ -34,7 +34,7 @@ Two source plugins are referenced throughout:
 
 - **AMLPetriNet** (`Aml.Editor.Plugin.PetriNet`, v0.1.14): one WebView for the whole view, a net picker
   when the document holds several nets, PNML text on the wire. Newer and cleaner; start from it.
-- **AMLFPB.js** (`Aml.Editor.Plugin.FPB`, v0.7.0): one sub-tab with its own WebView per FPD instance
+- **AMLFPB.js** (`Aml.Editor.Plugin.FPB`, v0.7.3): one sub-tab with its own WebView per FPD instance
   hierarchy, FPB.js JSON on the wire, a two second hash poll that follows edits made in the AML tree.
   Older, larger, with more recorded fixes (rebuild races, echo windows, pending caches).
 
@@ -85,7 +85,7 @@ single `[Export]` attribute. Do not copy MEF boilerplate from older examples.
 public partial class PetriNetPlugin : PluginViewBase, ISupportsThemes, INotifyAMLDocumentLoad
 ```
 (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `PetriNetPlugin`; the FPD plugin declares the same list
-plus `IToolBarIntegration` on `FpbPlugin` in `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`)
+on `FpbPlugin` in `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`)
 
 `Aml.Editor.Plugin.WPFBase.PluginViewBase` is a `UserControl` that implements `IAMLEditorView` (and
 through it `IAMLEditorPlugin`). The XAML root is the base class itself:
@@ -118,7 +118,7 @@ What the contract 4.3.0 offers (from the package's XML documentation), and what 
 | `INotifyAMLDocumentSaved` | `DocumentSaved(string)` | not used |
 | `ISupportsThemes` | `OnThemeChanged(ApplicationTheme)` | yes |
 | `ISupportsUIZoom` | `OnUIZoomChanged(double)` | not used |
-| `IToolBarIntegration` | `ToolBarCommands` (`List<PluginCommand>`) on the editor toolbar | Petri net plugin: not implemented on purpose; FPD plugin: New Process and Import, see 7.1 |
+| `IToolBarIntegration` | `ToolBarCommands` (`List<PluginCommand>`) on the editor toolbar | not implemented on purpose by either plugin, see 7.1 |
 | `ISupportsSelection` | Event `Selected` asks the editor to select a tree node | not used |
 | `INotifyViewActivation` | `Activate(string)` when the editor activates a view | not used |
 | `IEditorCommanding` | Editor sets a callback; `EditorCommandBase.SaveCAEXFile(...)` and friends run File/Save, Open, Close, GetCAEXFile, ImportLibraries, Capture | not used, see 6.6 |
@@ -171,7 +171,7 @@ It is copied to the build output (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/Aml.E
 but the packages built from both projects do not contain it (checked by listing them). The name, description
 and version the PlugIn Manager shows come from the nuspec, which MSBuild derives from `<Title>`,
 `<Description>`, `<Version>`, `<Authors>`, `<PackageTags>`. Keep `Metadata.xml` in sync with the csproj
-version by hand anyway; both projects do (0.1.14 and 0.7.0), and a drift has confused manual installs.
+version by hand anyway; both projects do (0.1.14 and 0.7.3), and a drift has confused manual installs.
 
 ---
 
@@ -1028,13 +1028,13 @@ only if users edit the same hierarchy in the tree while the canvas is open, and 
 
 ### 7.1 No commands on the editor toolbar; one menu per language
 
-The editor toolbar shows the `ToolBarCommands` of **one plugin at a time**. The FPD plugin puts New
-Process and Import FPB.js there (`ToolBarCommands` in the constructor `FpbPlugin` of
-`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`); with both plugins installed, those commands appeared inside the
-Petri net tab, and a plugin that also offers them inside its view shows them twice. The Petri net
-plugin does not implement `IToolBarIntegration` (its class declaration lists only `PluginViewBase`,
-`ISupportsThemes`, `INotifyAMLDocumentLoad`) and puts occasional commands into one drop-down button
-inside its own view:
+The editor toolbar shows the `ToolBarCommands` of **one plugin at a time**. When the FPD plugin put New
+Process and Import FPB.js there, with both plugins installed those commands appeared inside the
+Petri net tab, and a plugin that also offers them inside its view shows them twice. Neither plugin
+implements `IToolBarIntegration` (both class declarations list only `PluginViewBase`,
+`ISupportsThemes`, `INotifyAMLDocumentLoad`; the reason is recorded in the comment above
+`_newProcessCommand` in the constructor `FpbPlugin` of `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`).
+Both put occasional commands into one drop-down button inside their own view:
 
 ```xml
 <Button x:Name="NetMenuButton" Click="NetMenuButton_Click" ToolTip="Create, import or export a Petri net.">
@@ -1055,9 +1055,10 @@ inside its own view:
 </Button>
 ```
 (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`, `NetMenuButton`; opened below the button in
-`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `NetMenuButton_Click`; the FPD view instead has
-separate `ExportButton` and `ConformanceButton` buttons next to Update and Refresh in
-`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml`)
+`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `NetMenuButton_Click`; the FPD view has the
+same structure as `ProcessMenuButton` with New Process, Import FPB.js JSON, Export JSON and Export
+Conformance Report in `AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml`, opened by `ProcessMenuButton_Click` in
+`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`)
 
 Layout of the view toolbar that worked, and that keeps several language plugins reading as one
 family: **Update** and **Refresh** as buttons of their own (used every session), a separator, the
@@ -1072,9 +1073,14 @@ bound document, and call `CommandManager.InvalidateRequerySuggested()` whenever 
 detaches (`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs`, `NewNetItem.Command` in the constructor
 `PetriNetPlugin`, `InvalidateRequerySuggested` in `AttachDocument`). Let the empty
 placeholder offer the ways out of the empty state (New, Import) as buttons bound to the same command
-objects. Both source plugins show only text there (`NoDocumentPlaceholder` in
-`AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`, pointing at the Net menu; `NoIhPlaceholder` in
-`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml`), so the user has to find the command elsewhere.
+objects. The FPD plugin does this: the constructor `FpbPlugin` creates `_newProcessCommand` and
+`_importCommand` once and binds them to `PlaceholderNewProcessButton` and `PlaceholderImportButton` in
+`NoIhPlaceholder`, and `RebuildTabsForDocumentInner` hands the same objects to every view through
+`UseDocumentCommands`, so enabling follows the document everywhere at once
+(`AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs`, `AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml`,
+`AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs`). The Petri net plugin shows only text there
+(`NoDocumentPlaceholder` in `AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml`, pointing at the Net menu),
+so the user has to find the command elsewhere.
 
 ### 7.2 Status line
 
@@ -1359,9 +1365,9 @@ copied wholesale into the installed plugin folder, the editor loaded a second co
 plugin's load context, the plugin's `PluginViewBase` no longer matched the editor's, and the plugin
 disappeared from the editor without an error message. The README says so:
 
-> When copying build output into an installed plugin folder by hand, leave out
-> `Aml.Editor.Plugin.Contract.dll`. A second copy of that assembly makes the
-> editor ignore the plugin without an error message.
+> Do not copy `Aml.Editor.Plugin.Contract.dll` into an installed plugin folder.
+> The editor ignores the plugin without an error message if it finds a second
+> copy.
 
 (`AMLPetriNet: README.md`, section "Plugin")
 

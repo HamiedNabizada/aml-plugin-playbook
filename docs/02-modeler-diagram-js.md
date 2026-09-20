@@ -597,7 +597,7 @@ is validator rule EFL04 in `starter/dotnet/Efl.Conversion/EflValidator.cs`, `Che
   FPB.JS only avoids a typeless connection because its `Modeling.connect` asks the rules again and
   bails out (`FPB.JS: app/fpb/modeling/FpbModeling.js`, `Modeling.prototype.connect`). For the
   reconnect rules it appends `|| false` (`FPB.JS: app/fpb/rules/FpbRuleProvider.js`, rules
-  `connection.reconnectStart` and `connection.reconnectEnd` in
+  `connection.reconnect`, `connection.reconnectStart` and `connection.reconnectEnd` in
   `FpbRuleProvider.prototype.init`). Return `false` explicitly.
 - **Pseudo-actions without a handler are denied by default.** `connection.start` has no command
   handler, so global connect never starts unless a rule allows it
@@ -606,14 +606,16 @@ is validator rule EFL04 in `starter/dotnet/Efl.Conversion/EflValidator.cs`, `Che
   `connection.reconnect` when an end is dragged and asks the rules about that action
   (`diagram-js 15.26.0: lib/features/bendpoints/BendpointMove.js`, the `command` chosen in
   `BendpointMove`); rules for `connection.reconnectStart` and `connection.reconnectEnd` are never
-  asked. FPB.JS still shows the gap: it has rules only for those two names
-  (`FPB.JS: app/fpb/rules/FpbRuleProvider.js`, `FpbRuleProvider.prototype.init`), so a dragged end
-  meets no rule and is allowed. The same applies to updaters: FPB.JS registers `updateConnection`
-  for `connection.reconnectStart` and `connection.reconnectEnd` but not for `connection.reconnect`
-  (`FPB.JS: app/fpb/modeling/updater/ConnectionUpdater.js`, the `executed` and `reverted`
-  registrations in `ConnectionUpdater`), so `sourceRef` and `targetRef` keep pointing at the old
-  element: the drawing follows, the export does not. Register rules and updaters for
-  `connection.reconnect`.
+  asked. With rules only for those two names a dragged end meets no rule and is allowed. FPB.JS
+  therefore adds a `connection.reconnect` rule that runs `canConnect` on the new ends, with the
+  reason in a comment (`FPB.JS: app/fpb/rules/FpbRuleProvider.js`, rule `connection.reconnect` in
+  `FpbRuleProvider.prototype.init`). The same applies to updaters: registered only for the two
+  unused names, `sourceRef` and `targetRef` keep pointing at the old element, so the drawing
+  follows and the export does not. FPB.JS registers `updateConnection` and its DI update for
+  `connection.reconnect` as well (`FPB.JS: app/fpb/modeling/updater/ConnectionUpdater.js`, the
+  `executed` and `reverted` registrations and their comment in `ConnectionUpdater`;
+  `FPB.JS: app/fpb/modeling/updater/DiUpdater.js`, the `executed` and `reverted` registrations for
+  the reconnect commands in `DiUpdater`). Register rules and updaters for `connection.reconnect`.
 - **The connect tool tries the reverse direction.** When the forward check returns `false`, it asks
   again with source and target swapped and connects backwards if that is allowed
   (`diagram-js 15.26.0: lib/features/connect/Connect.js`, the `connect.hover` listener and `canConnectReverse`). A directed language gets
@@ -769,11 +771,13 @@ label shape, resize it); nested commands are undone together with the parent.
   `UpdatePropertiesHandler`).
 - **Writes in `postExecute` are not reverted.** `postExecute` is not re-run on redo and its plain
   assignments are not undone. FPB.JS's name synchronisation across layers writes straight into other
-  objects there, and so does the update of the element's identification, while `revert` only
-  restores the label text (`FPB.JS: app/fpb/label/cmd/UpdateLabelHandler.js`, `postExecute`,
-  `_handleStateNameSync`, `_updateBusinessObjectIdentification`, `revert`); undo leaves the renamed
-  states on the other layers behind. Record each such write on the context (target, key, old and
-  new value), re-apply the list in `execute` for redo, and restore it in reverse order in `revert`. The upstream Petri net handler has the same shape of bug: its default
+  objects there, and so does the update of the element's identification; with a `revert` that only
+  restores the label text, undo would leave the renamed states on the other layers behind. FPB.JS
+  routes every such write through a helper that records target, key, old and new value on the
+  context; `execute` re-applies the list for redo and `revert` restores it in reverse order
+  (`FPB.JS: app/fpb/label/cmd/UpdateLabelHandler.js`, `trackedWrite` and `ctx.directWrites`, used in
+  `_handleStateNameSync` and `_updateBusinessObjectIdentification`; `execute`, `revert`). Do the
+  same for every plain write in `postExecute`. The upstream Petri net handler has the same shape of bug: its default
   weight `"1"` is set in `postExecute` for every element type
   (`@bptlab/openbpt-modeler-petri-net 1.0.2: lib/modeling/UpdateLabelHandler.js`, `postExecute`).
   AMLPetriNet's browser test clears a place, a transition and an arc, then undoes all three and
@@ -897,9 +901,11 @@ field counts as version 1 (`starter/web/src/io/json.js`, `FORMAT_VERSION` check 
   (`@bptlab/openbpt-modeler-petri-net 1.0.2: lib/import/CustomImporter.js`, `_getEnd`).
 - **Uncropped imported waypoints draw arrow heads inside the shape.** Without stored waypoints the
   upstream importer uses the two centres (`@bptlab/openbpt-modeler-petri-net 1.0.2: lib/import/CustomImporter.js`,
-  `getWaypoints`), and FPB.JS's importer takes stored waypoints unchanged and has no fallback at
-  all for a connection without visual information (`FPB.JS: app/fpb/importer/JSONImporter.js`,
-  `buildSystemLimitFlow`). The PNML converter
+  `getWaypoints`). FPB.JS's importer takes stored waypoints unchanged; a file without complete
+  layout is first arranged by its automatic layout (`FPB.JS: app/fpb/importer/JSONImporter.js`,
+  `needsLayout` and `layoutImportData` in the import listener; `FPB.JS: app/fpb/layout/AutoLayout.js`),
+  and a connection still without waypoints gets a straight line between the two centres, again
+  uncropped (same importer file, `buildSystemLimitFlow` and `completeConnectionWaypoints`). The PNML converter
   computes docking points because the modeler does not run its docking layout on import
   (`AMLPetriNet: web/src/pnml/index.js`, arc loop in `convertPnmlXmlToModdleXml`).
 - **Store only bendpoints when end points can be recomputed.** The PNML export writes only the
@@ -907,31 +913,39 @@ field counts as version 1 (`starter/web/src/io/json.js`, `FORMAT_VERSION` check 
   stray bends in other tools (`AMLPetriNet: web/src/pnml/index.js`, file header comment and
   `convertModdleXmlToPnmlXml`). Your mapper must use the same convention; AMLPetriNet checks it with
   files the C# mapper produced (`AMLPetriNet: web/tools/verify-interop.mjs`).
-- **An importer that consumes its input cannot import twice.** FPB.JS's importer works on the
-  caller's data and removes matched entries from its element lists while building
-  (`FPB.JS: app/fpb/importer/JSONImporter.js`, `filterElements`, called with the lists of
-  `event.data` from `buildProcesses`), so a second import of the same object finds them gone. Clone
-  the data first.
-- **Import must replace, not append.** FPB.JS resets the importer's own process list on every
-  import request (`FPB.JS: app/fpb/importer/JSONImporter.js`, comment in the import listener of
-  `JSONImporter`) and the modeler's collections in `clear()` (`FPB.JS: app/fpb/FpbModeler.js`,
-  `FpbModeler.prototype.clear`), but an import without a preceding `clear()` still adds the new
-  project and processes to the data store (`FPB.JS: app/fpb/modeling/behavior/DataBehavior.js`, the
-  `dataStore.addedProjectDefinition` and `dataStore.newProcess` listeners). The AML plugin therefore
-  resets the modeler by hand before every import
-  (`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html`, comment in the `importJSON` branch).
-  Let the import itself drop everything the previous model left.
-- **One bad reference must not abort the whole import.** FPB.JS still aborts: an id listed in a
-  container with neither data nor visual information makes `buildTRandUsage` throw, a flow
-  from a state whose target is missing throws while its references are resolved, and the `catch`
-  of the import listener then ends the whole import (`FPB.JS: app/fpb/importer/JSONImporter.js`,
-  `filterElements`, `buildTRandUsage`, `updateDepedencies`). Skip ids without data, drop
-  connections with unresolved ends with a warning, and remove the half-resolved back references.
+- **An importer that consumes its input cannot import twice.** FPB.JS's importer removes matched
+  entries from its element lists while building and swaps reference ids for objects in place
+  (`FPB.JS: app/fpb/importer/JSONImporter.js`, `filterElements`, `updateDepedencies`), so it works
+  on a JSON copy of the caller's data; the doc comment of the copy function names the failure
+  (same file, `cloneImportData`, called first in the import listener). Clone the data first.
+- **Import must replace, not append.** The data store adds whatever project and processes it is
+  told about (`FPB.JS: app/fpb/modeling/behavior/DataBehavior.js`, the
+  `dataStore.addedProjectDefinition` and `dataStore.newProcess` listeners). FPB.JS's importer
+  therefore drops the previous model itself: it empties the modeler's process list in place and
+  tells the layer panel to forget its layers, and it does so only after the new model has been
+  resolved, so a failure leaves the previous model untouched (`FPB.JS: app/fpb/importer/JSONImporter.js`,
+  `resetModelState` and its call in the import listener; `FPB.JS: app/fpb/layer-panel/hooks/useProcessManagement.js`,
+  `handleReset` on `layerPanel.reset`). The AML plugin additionally resets the modeler by hand before
+  every import (`AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html`, comment in the
+  `importJSON` branch). Let the import itself drop everything the previous model left.
+- **One bad reference must not abort the whole import.** An id listed in a container without data,
+  or a flow whose end is missing, would otherwise end the whole import in the `catch` of the import
+  listener. FPB.JS's importer skips
+  an id without data with a warning (`FPB.JS: app/fpb/importer/JSONImporter.js`, `filterElements`),
+  resolves state assignments only when both ends exist (same file, `updateDepedencies`), and drops
+  connections with an unresolved end afterwards, removing the half-resolved back references and
+  tandem links (same file, `removeUnconnectedConnections`). Missing sub-processes and tandem partners
+  are dropped the same way. The warnings are collected into one report for the user
+  (`FPB.JS: app/fpb/importer/ImportErrors.js`, `ErrorHandler`: `logWarning`, `finishReport`). Skip
+  ids without data, drop connections with unresolved ends with a warning, and remove the
+  half-resolved back references.
 - **Fire-and-forget imports race the host.** FPB.JS's facade `importJSON` only fires an event
   (`FPB.JS: src/index.js`, `importJSON`); the importer then registers processes and switches to the
   entry process after a fixed 2000 ms timer (`FPB.JS: app/fpb/importer/JSONImporter.js`, the
   `setTimeout` in the import listener; `FPB.JS: app/fpb/importer/ImportConstants.js`,
-  `IMPORT_TIMING.UI_INITIALIZATION_DELAY`). Any "import finished" signal sent earlier is a guess.
+  `IMPORT_TIMING.UI_INITIALIZATION_DELAY`). Any "import finished" signal sent earlier is a guess,
+  and the import report fired at the end of that timer is none either: it fires only when there
+  are warnings (`FPB.JS: app/fpb/importer/ImportErrors.js`, `finishReport`).
   AMLPetriNet awaits `modeler.importPNML` and only then acknowledges
   (`AMLPetriNet: web/src/bridge.js`, `runImport`), and it serialises imports so two in quick
   succession do not interleave (same file, `importQueue` in the message listener of `connectBridge`).
@@ -990,12 +1004,14 @@ measured from (`AMLPetriNet: web/src/pnml/index.js`, `waypointsMid`).
 - **Waypoints can live in two places and drift apart.** FPB.JS keeps waypoints on the connection
   element and mirrors them into its DI objects on `connection.layout`, `connection.move` and
   `connection.updateWaypoints` (`FPB.JS: app/fpb/modeling/updater/ConnectionUpdater.js`,
-  `updateConnectionWaypoints`). The importer passes waypoints only to the connection element
-  (`FPB.JS: app/fpb/importer/JSONImporter.js`, `buildSystemLimitFlow`), so an imported connection
-  nobody touched has DI without waypoints, yet the layouter reads a parallel flow partner's
-  waypoints from DI without checking them (`FPB.JS: app/fpb/modeling/FpbLayouter.js`, the
-  `fpb:ParallelFlow` branch of `FpbLayouter.prototype.layoutConnection`). Serialize and read from
-  one source of truth: the diagram elements.
+  `updateConnectionWaypoints`). An importer that passes waypoints only to the connection element
+  leaves an imported connection nobody touched with DI without waypoints, and a layouter that reads
+  a parallel flow partner's waypoints from DI then reads nothing. FPB.JS closes both ends: the
+  importer mirrors imported waypoints into DI (`FPB.JS: app/fpb/importer/JSONImporter.js`,
+  `mirrorWaypointsToDi`), and the layouter takes the partner's waypoints from the live connection
+  in the element registry, falling back to DI, with the reason in its doc comment
+  (`FPB.JS: app/fpb/modeling/FpbLayouter.js`, `FpbLayouter.prototype._getPartnerWaypoints`).
+  Serialize and read from one source of truth: the diagram elements.
 - **A round trip is the cheapest complete test.** AMLPetriNet builds a net in the real modeler,
   exports, imports the export and exports again, and requires byte identity
   (`AMLPetriNet: web/tools/roundtrip.mjs`). Anything the converter drops shows up as a
@@ -1214,15 +1230,16 @@ page and forward them to the host (`AMLPetriNet: web/index.html`, the module scr
 |---|---|---|
 | starter | `diagram-js` `15.26.0`, `diagram-js-direct-editing` `3.5.1` exact (`starter/web/package.json`, `dependencies`) | same (`starter/web/package-lock.json`, entries `node_modules/diagram-js` and `node_modules/diagram-js-direct-editing`) |
 | AMLPetriNet | `@bptlab/openbpt-modeler-petri-net` `1.0.2` exact (`AMLPetriNet: web/package.json`, `dependencies`); the package itself asks for `diagram-js` `^15.5.0` | `diagram-js` 15.26.0, direct editing 3.5.1 (`AMLPetriNet: web/package-lock.json`, entries `node_modules/diagram-js` and `node_modules/diagram-js-direct-editing`) |
-| FPB.JS | `diagram-js` `^15.3.0`, `diagram-js-direct-editing` `^3.2.0` (`FPB.JS: package.json`, `dependencies`) | 15.3.0 and 3.2.0 (`FPB.JS: package-lock.json`, entries `node_modules/diagram-js` and `node_modules/diagram-js-direct-editing`) |
+| FPB.JS | `diagram-js` `^15.26.0`, `diagram-js-direct-editing` `^3.2.0` as build-time packages (`FPB.JS: package.json`, `devDependencies`) | 15.26.0 and 3.5.1 (`FPB.JS: package-lock.json`, entries `node_modules/diagram-js` and `node_modules/diagram-js-direct-editing`) |
 
 ### Why
 
 - **Caret ranges drift between machines and CI.** The reused package declares `^15.5.0`; without a
-  lock file a fresh install can resolve any 15.x. FPB.JS declares `^15.3.0` and its lock file
-  resolves 15.3.0, while this chapter reads diagram-js 15.26.0: a consumer of the published FPB.JS
-  package that installs without that lock file gets whatever 15.x is current, not the version the
-  modeler was tested with.
+  lock file a fresh install can resolve any 15.x. FPB.JS declares caret ranges too, but only as
+  development dependencies: its library bundle contains diagram-js and keeps only React external
+  (`FPB.JS: webpack.lib.config.js`, `externals`), so a consumer of the published package runs the
+  version the lock file resolved when the bundle was built. A build from a checkout without that
+  lock file can still pick up another 15.x or 3.x than the one the modeler was tested with.
 - **Patches against upstream internals are version-specific.** AMLPetriNet's prototype patches
   target `UpdateLabelHandler.prototype.postExecute` and a renderer method by name
   (`AMLPetriNet: web/src/index.js`, `postExecuteScopedToArcs` and `nameTransitionsBelow`); an upgrade
@@ -1241,7 +1258,7 @@ page and forward them to the host (`AMLPetriNet: web/index.html`, the module scr
 | `textRenderer` injected on bare diagram-js | Boot fails with a missing provider | Own `Text` instance | `starter/web/src/draw/Renderer.js` (`Renderer` constructor) |
 | Implicit root element | Export throws reading the root's business object | Explicit root on import | `starter/web/src/io/json.js` (`importModel`) |
 | Direct writes to business objects | No undo, no redraw, host never notified | Command handler with `execute`/`revert` | `starter/web/src/modeling/UpdatePropertiesHandler.js` (doc comment of `UpdatePropertiesHandler`) |
-| Writes in `postExecute` | Undo leaves partial state | Record and revert them, or issue commands | `FPB.JS: app/fpb/label/cmd/UpdateLabelHandler.js` (`postExecute`, `_handleStateNameSync`) |
+| Writes in `postExecute` | Undo leaves partial state | Record and revert them, or issue commands | `FPB.JS: app/fpb/label/cmd/UpdateLabelHandler.js` (`trackedWrite`, `_handleStateNameSync`, `revert`) |
 | Empty string labels | Blank label rendered, empty attribute exported | Store `null`, trim before checking | `FPB.JS: app/fpb/core/shapes/BaseShapeRenderer.js` (`renderEmbeddedLabel`) |
 | Default text on cleared label | Place named "1" | Scope defaults to the element type | `AMLPetriNet: web/src/index.js` (`postExecuteScopedToArcs`) |
 | Counter ids | `element with id ... already added` after import | Random or deterministic ids | `diagram-js 15.26.0: lib/core/ElementFactory.js` (`ElementFactory.prototype.create`) |
@@ -1253,8 +1270,8 @@ page and forward them to the host (`AMLPetriNet: web/index.html`, the module scr
 | Base layouter | Bends straightened when a node moves | Own layouter keeping bendpoints | `diagram-js 15.26.0: lib/layout/BaseLayouter.js` (`layoutConnection`) |
 | `x || original.x` | Coordinate 0 replaced | Compare with `undefined` | `FPB.JS: app/fpb/xml/XMLMapper.js` (`_addVisualAttributes`) |
 | Listener leaks | Handlers run twice after remount, memory grows | `off` in cleanup, `diagram.destroy` hook | `FPB.JS: app/fpb/services/KeyboardAlignService.js` (`constructor`, `destroy`) |
-| Import appends | Duplicate layers or elements after reimport | Reset all collections in `clear()` | `FPB.JS: app/fpb/FpbModeler.js` (`FpbModeler.prototype.clear`) |
-| Import mutates input | Second import of the same data is empty | Clone input | `FPB.JS: app/fpb/importer/JSONImporter.js` (`filterElements`) |
+| Import appends | Duplicate layers or elements after reimport | Drop the previous model in the import itself | `FPB.JS: app/fpb/importer/JSONImporter.js` (`resetModelState`) |
+| Import mutates input | Second import of the same data is empty | Clone input | `FPB.JS: app/fpb/importer/JSONImporter.js` (`cloneImportData`, `filterElements`) |
 | Import reported early | Host baseline taken before the canvas is filled | Await import completion | `FPB.JS: app/fpb/importer/JSONImporter.js` (import listener in `JSONImporter`, `IMPORT_TIMING`) |
 | Swallowed import errors | Elements missing, no error | Forward console to host log | `@bptlab/openbpt-modeler-petri-net 1.0.2: lib/import/CustomTreeWalker.js` (`visitIfDi`) |
 | UI state on shapes | Extra properties in the export | Keep UI state in contexts | `FPB.JS: app/fpb/context-pad/FpbContextPadProvider.js` (`startConnect`) |

@@ -507,12 +507,11 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   input fields read and write `.value` on the list itself.
 - **Fix:** bind UI editors to the element of a collection, and add an export check for every
   editable field.
-- **Evidence:** FPB.JS: app/fpb/properties-panel/PropertiesView.js (`addCharacteristics`, which
-  creates the list, and the `actualValues` form group in `Characteristics`, which reads
-  `actualValues?.value` and passes the list to `updateCharacteristics`). The importer also keeps
-  only the first entry of the list (FPB.JS: app/fpb/importer/JSONImporter.js, `addActualValues` in
-  `buildCharacteristics`).
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS binds the fields to the first entry of the list:
+  app/fpb/properties-panel/PropertiesView.js (`firstActualValue` in `Characteristics` reads it, and
+  `updateCharacteristics` writes into `target[0]`, creating a `fpbch:ValueWithUnit` entry when the
+  list is empty). The importer keeps every entry and accepts the older single-object form
+  (app/fpb/importer/JSONImporter.js, `addActualValues` in `buildCharacteristics`).
 
 #### PF-FMT-04 A stored relation that can be derived drifts out of sync
 - **Symptom:** tandem flow groups become one-sided or keep ids of deleted flows; the XML round
@@ -523,9 +522,9 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   them, or at least resolve over a copy and drop dangling ids.
 - **Evidence:** fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs (`ParseProcess`, where
   `inTandemWith` is computed); FPB.JS: app/fpb/importer/JSONImporter.js (`updateDepedencies`, which
-  still replaces entries of `inTandemWith` while iterating over it and leaves ids without a partner
-  in place).
-- **Status:** open in FPB.JS, both the XML loss and the importer loop.
+  resolves `inTandemWith` over a copy, drops an id without a partner with a warning and gives each
+  partner the back link through `replaceReference`).
+- **Status:** open in FPB.JS for the XML round trip (PF-FMT-10).
 
 #### PF-FMT-05 `JSON.stringify` throws on the model export
 - **Symptom:** "Converting circular structure to JSON" when the host asks for the model.
@@ -552,10 +551,10 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Symptom:** a second import of the same data throws a cryptic error.
 - **Cause:** the importer consumed the caller's arrays and replaced ids by objects in place.
 - **Fix:** deep-copy import data before working on it.
-- **Evidence:** FPB.JS: app/fpb/importer/JSONImporter.js (`buildProcesses` works on the caller's
-  `elementVisualInformation` and `elementDataInformation` arrays, and `filterElements` removes each
-  entry it takes from them).
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS: app/fpb/importer/JSONImporter.js (`filterElements` still removes each entry
+  it takes from `elementVisualInformation` and `elementDataInformation`, but the
+  `IMPORT_EVENTS.IMPORT_REQUEST` handler first copies the input with `cloneImportData`, so the
+  caller's data stays intact and can be imported again).
 
 #### PF-FMT-08 Importing a second file mixes both models
 - **Symptom:** duplicate layers in the layer panel; the export contains three project
@@ -565,12 +564,11 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Fix:** reset model state and panels before registering the new model, and only after the new
   one resolved; make `clear()` reset everything it owns.
 - **Evidence:** FPB.JS: app/fpb/FpbModeler.js (`FpbModeler.prototype.clear`, which resets the model
-  collections); the host workaround in AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html (the
-  `importJSON` branch of the `message` listener, which resets and clears the modeler before every
-  import).
-- **Status:** open in FPB.JS for a caller that imports without calling `clear()` first: the
-  `IMPORT_EVENTS.IMPORT_REQUEST` handler in `JSONImporter` (app/fpb/importer/JSONImporter.js) resets
-  only its own process list and registers the new project before its processes are resolved.
+  collections); FPB.JS: app/fpb/importer/JSONImporter.js (the `IMPORT_EVENTS.IMPORT_REQUEST` handler
+  resolves the new processes first, then calls `resetModelState`, which empties the modeler's process
+  list and fires `IMPORT_EVENTS.LAYER_PANEL_RESET`, and only then registers the new project); the
+  host in AMLFPB.js also resets and clears the modeler before every import
+  (Aml.Editor.Plugin.FPB/fpbjs-assets/index.html, the `importJSON` branch of the `message` listener).
 
 #### PF-FMT-09 One broken reference leaves an empty canvas
 - **Symptom:** import aborts with a bare `TypeError`; nothing is drawn.
@@ -578,10 +576,12 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   incoming/outgoing lists or a dangling flow reference each threw.
 - **Fix:** skip and warn per element, draw connections without stored geometry, drop flows with
   a missing end.
-- **Evidence:** FPB.JS: app/fpb/importer/JSONImporter.js (`filterElements` hands an unknown id or a
-  missing visual entry on to the build functions, and `buildSystemLimitFlow` reads `vI.type` without
-  a check).
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS: app/fpb/importer/JSONImporter.js (`filterElements` skips an id without data
+  with a warning; `buildSystemLimitFlow` builds a connection without visual information and
+  `completeConnectionWaypoints` gives it a straight line; `removeUnconnectedConnections` drops a
+  connection with an unresolved end and undoes the half of the wiring that resolved). The warnings
+  reach the user as one report (app/fpb/importer/ImportErrors.js, `startReport`, `finishReport`;
+  app/fpb/components/ImportNotificationBridge.js).
 
 #### PF-FMT-10 Importing an XML file ignores its content
 - **Symptom:** after `toXML()` and editing the file, `importXML()` restores the old model.
@@ -635,8 +635,9 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   importer can also derive a missing `parent` from the `consistsOfProcesses` lists instead of
   trusting the file.
 - **Evidence:** fpb-aml-mapper: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs (`Convert`, where
-  `parent` is resolved). FPB.JS does not derive it: app/fpb/importer/JSONImporter.js (the
-  `IMPORT_EVENTS.IMPORT_REQUEST` handler resolves only a `parent` the file names).
+  `parent` is resolved). FPB.JS derives it: app/fpb/importer/JSONImporter.js (the
+  `IMPORT_EVENTS.IMPORT_REQUEST` handler sets `parent` on every sub-process listed in
+  `consistsOfProcesses` whose `parent` is missing or unresolved).
 
 #### PF-FMT-16 Usage connections break the importer
 - **Symptom:** the modeler import crashes on models with technical resources.
@@ -651,8 +652,10 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   sub-process is the decomposed operator's name.
 - **Fix:** the element's own name first.
 - **Evidence:** fpb-aml-mapper: dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs (`BuildProcess`, which
-  still passes `processName` to `SetIdentification` for the system limit).
-- **Status:** open in fpb-aml-mapper.
+  passes the system limit's own name to `SetIdentification` and falls back to `processName` only
+  when it is empty); fpb-aml-mapper: dotnet/FpbMapper.Tests/SystemLimitNameTests.cs
+  (`Convert_KeepsTheSystemLimitNamesOfSubProcesses`,
+  `UpdateInPlace_AddingASubProcessKeepsItsSystemLimitName`).
 
 #### PF-FMT-18 Exported coordinates make the file invalid
 - **Symptom:** the grammar validator rejects a PNML file the tool wrote.
@@ -678,12 +681,10 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** diagram-js executes `connection.reconnect`; updaters and rules listened only to
   `connection.reconnectStart` and `connection.reconnectEnd`, which no version in use emits.
 - **Fix:** register updaters and rules for `connection.reconnect`.
-- **Evidence:** FPB.JS still shows the problem: app/fpb/modeling/updater/ConnectionUpdater.js
-  (`ConnectionUpdater` registers its handlers for `connection.reconnectStart` and
-  `connection.reconnectEnd` only); FPB.JS: app/fpb/rules/FpbRuleProvider.js
-  (`FpbRuleProvider.prototype.init` has rules for `connection.reconnectStart` and
-  `connection.reconnectEnd`, none for `connection.reconnect`).
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS: app/fpb/modeling/updater/ConnectionUpdater.js (`ConnectionUpdater`
+  registers `updateConnection` for `connection.reconnect` next to the two names no version emits);
+  FPB.JS: app/fpb/rules/FpbRuleProvider.js (`FpbRuleProvider.prototype.init`, rule
+  `connection.reconnect`).
 
 #### PF-DJS-02 Rules allow what they should forbid
 - **Symptom:** a connection can be reconnected to an invalid target.
@@ -691,9 +692,10 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   command (`connection.reconnect`, `shape.create`, `elements.move`) diagram-js then allows it,
   as long as a handler exists.
 - **Fix:** return an explicit `false` (`canConnect(...) || false`).
-- **Evidence:** `starter/web/src/rules/Rules.js` (the class comment of `Rules`). FPB.JS answers no
-  rule for `connection.reconnect` (app/fpb/rules/FpbRuleProvider.js,
-  `FpbRuleProvider.prototype.init`), so its own rules do not stop a reconnection to an invalid target (PF-DJS-01).
+- **Evidence:** `starter/web/src/rules/Rules.js` (the class comment of `Rules`). FPB.JS's
+  `connection.reconnect` rule returns `false` when an end is missing and
+  `canConnect(source, target, connection) || false` otherwise (app/fpb/rules/FpbRuleProvider.js,
+  `FpbRuleProvider.prototype.init`).
 
 #### PF-DJS-19 The palette's connect tool does nothing
 - **Symptom:** clicking the flow tool in the palette and dragging from a node draws no
@@ -743,11 +745,10 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** `postExecute` wrote side effects directly into the model, outside the command's
   recorded context.
 - **Fix:** record side writes on the command context and revert/reapply them.
-- **Evidence:** FPB.JS: app/fpb/label/cmd/UpdateLabelHandler.js
-  (`UpdateLabelHandler.prototype.postExecute` writes the synchronised names through
-  `_handleStateNameSync` and `_updateBusinessObjectIdentification` directly into the model, and
-  `UpdateLabelHandler.prototype.revert` restores only the label).
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS: app/fpb/label/cmd/UpdateLabelHandler.js (`_handleStateNameSync` and
+  `_updateBusinessObjectIdentification` write through `trackedWrite`, which records each write in
+  `ctx.directWrites`; `UpdateLabelHandler.prototype.revert` restores them in reverse order and
+  `UpdateLabelHandler.prototype.execute` applies them again on redo).
 
 #### PF-DJS-07 Layer switch bypasses the command stack
 - **Symptom:** listeners that rely on `diagram.clear` do not run on layer switch.
@@ -765,9 +766,8 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   after each operation.
 - **Evidence:** FPB.JS: app/fpb/modeling/updater/ConnectionUpdater.js
   (`ConnectionUpdater.prototype._handleDelete`) and FPB.JS: app/fpb/modeling/updater/ShapeUpdater.js
-  (`ShapeUpdater.prototype._handleDelete`) remove the flows on the other layer from the container
-  and the business objects, not from the shapes' `incoming` and `outgoing`.
-- **Status:** open in FPB.JS.
+  (`ShapeUpdater.prototype._handleDelete`) remove the flows on the other layer from the container,
+  the business objects and the shapes' `incoming` and `outgoing`.
 
 #### PF-DJS-09 Library use throws `ReferenceError: fpbjs is not defined`
 - **Symptom:** modeling works in the standalone app, fails when embedded.
@@ -1028,10 +1028,13 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** the AML Editor shows the toolbar commands of one plugin at a time.
 - **Fix:** put commands into the plugin's own panel menu, not the editor toolbar.
 - **Evidence:** AMLPetriNet: Aml.Editor.Plugin.PetriNet/PetriNetPlugin.xaml.cs (the `PetriNetPlugin`
-  constructor, which puts no command on the editor toolbar). AMLFPB.js still puts "New Process" and
-  "Import FPB.js" on it: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs (`ToolBarCommands`, filled in the
-  `FpbPlugin` constructor).
-- **Status:** open in AMLFPB.js.
+  constructor, which puts no command on the editor toolbar). AMLFPB.js implements no
+  `IToolBarIntegration`; "New Process" and "Import FPB.js" are one pair of commands
+  (Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs, `_newProcessCommand`, `_importCommand`) shown in each
+  viewer's Process menu (Aml.Editor.Plugin.FPB/Views/IhView.xaml, `ProcessMenu`;
+  Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs, `UseDocumentCommands`) and, while the document has no
+  FPD hierarchy, in the empty placeholder (Aml.Editor.Plugin.FPB/FpbPlugin.xaml,
+  `PlaceholderNewProcessButton`, `PlaceholderImportButton`).
 
 #### PF-PLG-08 Changes are not saved by the editor's Save button
 - **Symptom:** the plugin changed the document, but the editor does not consider it dirty.
@@ -1215,14 +1218,17 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   complete, so a modeler never arranges it. Better: the mapper emits only the layout the document
   stores, and the modeler arranges every process that lacks layout on import, reports how many
   elements it placed, and still draws a single connection without stored geometry.
-- **Evidence:** fpb-aml-mapper takes the first route: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs
-  (`ParseProcess`, which calls `FallbackWaypoints` when `BuildWaypoints` finds fewer than two
-  stored points) and dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs (`BuildProcess` and `AddElement`,
-  default ViewInformation for a SystemLimit without visual data), pinned by fpb-aml-mapper:
-  dotnet/FpbMapper.Tests/WaypointFallbackTests.cs (`WaypointFallbackTests`). FPB.JS:
-  app/fpb/importer/JSONImporter.js (the `IMPORT_EVENTS.IMPORT_REQUEST` handler) has no layout step,
-  so such a file opens with the invented straight lines.
-- **Status:** open in fpb-aml-mapper and FPB.JS.
+- **Evidence:** fpb-aml-mapper and FPB.JS take the better route. The mapper adds a connection's
+  visual entry only when `BuildWaypoints` finds at least two stored points
+  (dotnet/FpbMapper.Conversion/CaexToFpbJson.cs, `ParseProcess`) and writes no default
+  ViewInformation for a SystemLimit without visual data (dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs,
+  `AddElement`, `BuildProcess`), pinned by fpb-aml-mapper:
+  dotnet/FpbMapper.Tests/LayoutFreeConversionTests.cs
+  (`Convert_WithoutAnyLayout_EmitsNoVisualInformationButAllData`). FPB.JS arranges on import:
+  app/fpb/importer/JSONImporter.js (the `IMPORT_EVENTS.IMPORT_REQUEST` handler calls `needsLayout` and
+  `layoutImportData` from app/fpb/layout/AutoLayout.js and warns per process how many elements were
+  placed; `completeConnectionWaypoints` draws a straight line for a connection still without
+  geometry).
 
 #### PF-LAY-02 Fallback geometry changes on every sync
 - **Symptom:** a no-op sync keeps reporting changed waypoints.
@@ -1230,9 +1236,9 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   the write side stored them differently than the read side produced them.
 - **Fix:** give generated points exactly the shape of read points; run echo round trips in tests.
   Better still, generate no points on the read side at all (PF-LAY-01).
-- **Evidence:** the missing `original` entry is known from the project history; fpb-aml-mapper:
-  dotnet/FpbMapper.Conversion/CaexToFpbJson.cs (`FallbackWaypoints`, which now gives generated points
-  the same `original` entry that `BuildWaypoints` gives port points).
+- **Evidence:** the missing `original` entry is known from the project history. fpb-aml-mapper
+  generates no points on the read side: dotnet/FpbMapper.Conversion/CaexToFpbJson.cs (`ParseProcess`
+  emits only the waypoints `BuildWaypoints` reads from the document); see PF-LAY-01.
 
 #### PF-LAY-03 Every node sits at the origin
 - **Symptom:** a foreign PNML file opens as one pile of shapes.
@@ -1283,9 +1289,9 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Symptom:** 66 waypoints before, 40 after, all straight lines.
 - **Cause:** the writer stored waypoints; the reader ignored them and used a two-point default.
 - **Fix:** read what the writer writes; measure waypoint counts in a round-trip test.
-- **Evidence:** FPB.JS: app/fpb/xml/XMLMapper.js (the writer sets `visual:waypoints`; the reader
-  builds every flow's visual entry from `DEFAULT_WAYPOINTS` or a fixed two-point line).
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS: app/fpb/xml/XMLMapper.js (the writer sets `visual:waypoints`; the reader takes
+  a flow's waypoints from the file through `_readWaypoints` and falls back to `DEFAULT_WAYPOINTS`
+  only when the file carries fewer than two).
 
 #### PF-LAY-10 Parallel branches align to missing data
 - **Symptom:** after import, the layouter finds no waypoints for the partners of a parallel flow
@@ -1293,11 +1299,10 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** imported waypoints were not mirrored into the DI objects, and the layouter read
   partner waypoints from DI.
 - **Fix:** mirror waypoints into DI on import; read partner waypoints from the shape.
-- **Evidence:** FPB.JS: app/fpb/modeling/FpbLayouter.js (`FpbLayouter.prototype.layoutConnection`,
-  which reads the partner's waypoints from `inTandemWith[0].di.waypoint` and skips the alignment
-  when they are missing); FPB.JS: app/fpb/importer/JSONImporter.js (`buildSystemLimitFlow`, which
-  sets the waypoints on the connection only).
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS: app/fpb/importer/JSONImporter.js (`mirrorWaypointsToDi`, called for every
+  process on import); FPB.JS: app/fpb/modeling/FpbLayouter.js
+  (`FpbLayouter.prototype._getPartnerWaypoints`, which reads the partner's connection shape from the
+  `elementRegistry` first and `di.waypoint` only as a fallback).
 
 #### PF-LAY-11 A zero-size node produces NaN docking points
 - **Symptom:** connections to a node vanish.
@@ -1327,9 +1332,8 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** placement by "count of existing times spacing" assumed left-packed elements.
 - **Fix:** place right of the outermost existing element.
 - **Evidence:** FPB.JS: app/fpb/modeling/updater/ConnectionUpdater.js
-  (`ConnectionUpdater.prototype._handleCreate`, which still places the new state at
-  `existingStatesOnBorder` times the spacing).
-- **Status:** open in FPB.JS.
+  (`ConnectionUpdater.prototype._handleCreate`, which places the new state a spacing right of
+  `rightEdge`, the right edge of the outermost state already on that boundary).
 
 #### PF-LAY-15 The arranged diagram is unreadable although every test passes
 - **Symptom:** after automatic layout a back flow lies exactly on top of the forward flow between
@@ -1364,11 +1368,12 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** goldens were regenerated without reading the diff.
 - **Fix:** review every regenerated golden like code; add a targeted test for each value found
   wrong.
-- **Evidence:** fpb-aml-mapper: dotnet/FpbMapper.Tests/TestData/Temperieren.roundtrip.golden.json
-  expects the sub-process system limit to be named `Erhitzen`, the name of the decomposed operator,
-  and dotnet/FpbMapper.Tests/TestData/Temperieren.aml-structure.golden.txt records the same
-  `shortName`; both carry the naming bug of PF-FMT-17 as the expected value.
-- **Status:** open in fpb-aml-mapper.
+- **Evidence:** fpb-aml-mapper's goldens carried the naming bug of PF-FMT-17 as the expected value,
+  the sub-process system limit named `Erhitzen` after the decomposed operator (known from the
+  project history). Both expect `SL_Erhitzen`
+  (dotnet/FpbMapper.Tests/TestData/Temperieren.roundtrip.golden.json and the `shortName` in
+  dotnet/FpbMapper.Tests/TestData/Temperieren.aml-structure.golden.txt), and a targeted test pins the
+  value: fpb-aml-mapper: dotnet/FpbMapper.Tests/SystemLimitNameTests.cs (`SystemLimitNameTests`).
 
 #### PF-TST-03 A round-trip test measures the engine's reformatting
 - **Symptom:** round-trip diffs full of whitespace and attribute order changes.
@@ -1413,10 +1418,9 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** palette entries carry `aria-label` instead of `title` in newer versions.
 - **Fix:** select by role or test id, update selectors together with the dependency.
 - **Evidence:** FPB.JS: tests/e2e/pages/ModelerPage.js (`clickPaletteAndPlace`, which selects a
-  palette entry with `getByTitle`). That works with diagram-js 15.3.0, which FPB.JS locks in
-  package-lock.json and which still sets a title attribute; later 15.x versions set an aria-label
-  attribute instead, so the selector breaks with the update.
-- **Status:** latent in FPB.JS.
+  palette entry with `getByRole('button', { name: label, exact: true })`, with a comment that
+  diagram-js 15.x sets `aria-label` instead of `title`); FPB.JS locks diagram-js 15.26.0 in
+  package-lock.json.
 
 #### PF-TST-08 Clicking on the canvas does not open the context pad in tests
 - **Symptom:** position-based clicks miss elements; context pad tests are flaky.
@@ -1524,8 +1528,8 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Symptom:** broken tests discovered only at release time.
 - **Cause:** the only workflow built and published on tags.
 - **Fix:** unit, e2e and build jobs on every push and pull request.
-- **Evidence:** FPB.JS: .github/workflows/release.yml is its only workflow and runs on tags.
-- **Status:** open in FPB.JS.
+- **Evidence:** FPB.JS: .github/workflows/test.yml runs the jobs `unit`, `e2e` and `build` on every
+  push and pull request; the release workflow next to it runs on tags.
 
 #### PF-CI-03 CI installs are slow and e2e times out
 - **Symptom:** every job builds the whole library during `npm ci`; the Playwright web server
@@ -1534,8 +1538,9 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Fix:** `npm ci --ignore-scripts` for jobs that do not need the build; raise the web server
   timeout.
 - **Evidence:** FPB.JS: package.json (the `prepare` script, which runs the full build on every
-  `npm ci`); FPB.JS: playwright.config.js (`webServer`, which starts the app for the e2e tests). FPB.JS
-  itself has no CI job that runs the e2e tests (PF-CI-02), so both apply to a project that adds one.
+  `npm ci`); FPB.JS: .github/workflows/test.yml (`npm ci --ignore-scripts` in the jobs `unit`, `e2e`
+  and `build`); FPB.JS: playwright.config.js (`webServer.timeout`, raised with a comment that the dev
+  server builds the whole bundle and CI runners are slower).
 
 #### PF-CI-04 Glob arguments are passed literally on Windows runners
 - **Symptom:** a validation tool receives `*.pnml` as a file name.
@@ -1583,9 +1588,12 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Cause:** behind the cloud front end every request had the front end's address, so the rate
   limiter used one bucket; static files also consumed permits.
 - **Fix:** `UseForwardedHeaders` with cleared known proxies, and rate-limit only API endpoints;
-  return a body and `Retry-After`.
+  return a body and `Retry-After`. Behind a second proxy on another host, key the limit on a visitor
+  address that proxy sends, and trust it only with a shared key.
 - **Evidence:** AMLPetriNet: dotnet/PtMapper.Web/Program.cs (`UseForwardedHeaders` with
-  `KnownProxies.Clear()`, `AddRateLimiter` and `ApiPolicy`).
+  `KnownProxies.Clear()`, `AddRateLimiter` and `ApiPolicy`; `ClientAddress`, which honours
+  `X-Client-Address` only with the key from `PT_PROXY_KEY`); fpb-aml-mapper: server.js (the `/pt`
+  proxy sends that header, and `trust proxy` makes `req.ip` the visitor).
 
 #### PF-DEP-04 Example files return 404
 - **Symptom:** the demo `.aml` file is not served.

@@ -197,16 +197,26 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
   `X-Forwarded-For` from any caller. It is acceptable only when the app is reachable exclusively
   through a front end that overwrites the header. If your app is directly reachable, list the proxy
   addresses instead.
-- The health endpoint echoes the address the limiter sees, so the forwarded-header setup can be
-  checked after every deploy (`MapGet("/api/health", ...)`, the `client` field).
+- A reverse proxy on another host is one caller to the front end, so every visitor coming through
+  it shares one bucket, and a client address header from the proxy cannot simply be trusted, or
+  anyone picks their own bucket. The app therefore takes `X-Client-Address` as the partition only
+  when the request also carries `X-Proxy-Key` equal to the `PT_PROXY_KEY` setting both sides hold,
+  compared in constant time, and ignores the header when no key is configured (`ClientAddress`,
+  comment above `proxyKey`; AMLPetriNet: `README.md`, section "Web application").
+- The health endpoint echoes the forwarded client address, so the forwarded-header setup can be
+  checked after every deploy (`MapGet("/api/health", ...)`, the `client` field). It shows
+  `RemoteIpAddress`, not the proxy-supplied address `ClientAddress` partitions on for keyed
+  requests.
 - The rejection handler sets `Retry-After: 60` and writes `{ error }`, so the page can show a
   sentence instead of "429" (`AddRateLimiter`, `options.OnRejected`).
 
 When a proxy fronts the app, give the proxy the same body limit as the app, and tie the two numbers
-together with a comment. The FPB proxy counts the body itself and answers 413 above its own
-`MAX_BODY_BYTES` of 2 MB before the .NET API sees the request (fpb-aml-mapper: `server.js`,
-`MAX_BODY_BYTES` and the body loop in the `app.post('/api/:direction', ...)` route). A proxy limit lower
-than the app's produces 413s that the app's logs never show.
+together with a comment. The FPB proxy counts the body itself and answers 413 before the app sees
+the request: for its own .NET API above `MAX_BODY_BYTES` of 2 MB, and for the PT app it passes
+through above `PT_MAX_BODY_BYTES` of 8 MB, commented as the PT app's own limit (fpb-aml-mapper:
+`server.js`, `MAX_BODY_BYTES`, `PT_MAX_BODY_BYTES` and the body loops in the
+`app.post('/api/:direction', ...)` route and the `app.use('/pt', ...)` middleware). A proxy limit
+lower than the app's produces 413s that the app's logs never show.
 
 ## 4. Returning warnings, summaries and findings
 
@@ -299,8 +309,12 @@ apply. The policy therefore protects nothing in the deployed setup and only matt
 browser calls. If you do write an origin predicate, use `Uri.TryCreate`: `new Uri(origin)` throws
 on the literal origin `null` that sandboxed frames and `file:` pages send.
 
-When a proxy puts the app under a path of another site (for example a Node proxy that serves the
-PT app under `/pt` next to its own pages), four things have to be handled:
+When a proxy puts the app under a path of another site, four things have to be handled. The FPB
+proxy is the worked example: it serves the PT app under `/pt` next to its own pages (fpb-aml-mapper:
+`server.js`, `PT_APP` and the `app.use('/pt', ...)` middleware), and both pages link to each other
+(fpb-aml-mapper: `public/index.html`, the `nav` in the page header; AMLPetriNet:
+`dotnet/PtMapper.Web/wwwroot/index.html`, `nav.languages`, shown only when the page is served under
+a path).
 
 1. **Relative URLs in the page.** An absolute `fetch('/api/...')` resolves against the root of the
    proxy host, not the app. The PT page uses `./api/...` throughout, with the reason in a comment
@@ -311,25 +325,33 @@ PT app under `/pt` next to its own pages), four things have to be handled:
 2. **Trailing slash redirect.** `/pt` without a slash makes the browser resolve `./ptnjs.esm.js`
    against the root. Redirect `/pt` to `/pt/` inside the prefix middleware, not as a separate
    route: Express treats `/pt` and `/pt/` as the same path without strict routing, and a second
-   route loops.
-3. **Forwarded client address.** Set `x-forwarded-for` and `x-forwarded-proto` on the forwarded
-   request, so the app's limiter partitions on the caller (section 3). The FPB proxy forwards to
-   its API with only a `Content-Type` header, so the API sees the proxy's address for every caller
-   (fpb-aml-mapper: `server.js`, the `fetch` call in `app.post('/api/:direction', ...)`); it rate
-   limits in the proxy instead (`rateLimit`).
-4. **Header whitelist.** A proxy copies only the response headers it names. The FPB proxy copies
-   `X-Conversion-Warnings` and the content type, nothing else (fpb-aml-mapper: `server.js`, the
-   `res.set` and `.type` calls in `app.post('/api/:direction', ...)`). Every new metadata header in
-   the app must be added to such a list, or the page silently loses warnings. For a whole-app
-   pass-through, copy `content-type`, `cache-control`, `content-disposition`, the app's info
-   headers, `retry-after` and `location`, pass redirects through unchanged with
-   `redirect: 'manual'`, and answer 502 with `{ error }` when the app is down, as the FPB proxy does
-   for its API (same route, the `catch` block).
+   route loops (fpb-aml-mapper: `server.js`, the `redirect(301, '/pt/')` at the start of the
+   `app.use('/pt', ...)` middleware, with that reason in its comment).
+3. **Forwarded client address.** Pass the caller's address and protocol on, so the app's limiter
+   partitions on the caller (section 3). A plain `x-forwarded-for` is not enough when a hosting
+   front end sits between proxy and app: the front end puts the proxy's address last. The FPB
+   proxy sends `x-forwarded-proto`, plus `x-client-address` with the shared `x-proxy-key` when
+   `PT_PROXY_KEY` is set (fpb-aml-mapper: `server.js`, the `headers` built in the
+   `app.use('/pt', ...)` middleware), and trusts one proxy hop itself so that its own limiter sees
+   the visitor, not the local web server (same file, `app.set('trust proxy', 1)` and `rateLimit`).
+   Its own API still gets only a `Content-Type` header, so the API sees the proxy's address for
+   every caller (same file, the `fetch` call in `app.post('/api/:direction', ...)`); that API is
+   rate limited in the proxy instead (`rateLimit`).
+4. **Header whitelist.** A proxy copies only the response headers it names. For its own API the
+   FPB proxy copies `X-Conversion-Warnings` and the content type, nothing else (fpb-aml-mapper:
+   `server.js`, the `res.set` and `.type` calls in `app.post('/api/:direction', ...)`). Every new
+   metadata header in the app must be added to such a list, or the page silently loses warnings.
+   For a whole-app pass-through, copy `content-type`, `cache-control`, `content-disposition`, the
+   app's info headers and `retry-after`, pass redirects through with `redirect: 'manual'` and a
+   `location` rewritten onto the proxy's path, and answer 502 with `{ error }` when the app is down.
+   The FPB proxy's `/pt` middleware does exactly that (same file, the header list with `x-pt-info`,
+   the `location` rewrite and the `catch` block in `app.use('/pt', ...)`).
 
 Pass a whole app through unchanged rather than rewriting parts of it: rewriting would break the
-relative paths in its HTML. The FPB API proxy, in contrast, whitelists the two known directions and
-rejects anything else (`server.js`, `app.post('/api/:direction', ...)`); with a whole-app
-pass-through that list does not need maintenance.
+relative paths in its HTML (fpb-aml-mapper: `server.js`, comment above `app.use('/pt', ...)`). The
+FPB API proxy, in contrast, whitelists the two known directions and rejects anything else
+(`server.js`, `app.post('/api/:direction', ...)`); with a whole-app pass-through that list does not
+need maintenance.
 
 ## 6. Static files: the page, the bundle, example files
 
@@ -498,7 +520,8 @@ node web/tools/verify-webapp.mjs https://<your-host>/
 ```
 
 References: fpb-aml-mapper: `README.md`, section "Deploy to Azure" (publish, zip, zip deploy);
-AMLPetriNet: `README.md`, section "Web application" (bundle build, then `dotnet run`); the browser
+AMLPetriNet: `README.md`, sections "Build" (bundle build first) and "Web application"
+(`dotnet run`); the browser
 test takes a base URL (AMLPetriNet: `web/tools/verify-webapp.mjs`, the usage comment and `base`)
 and was run against the live instance.
 
@@ -624,7 +647,7 @@ starter serves only a `.json` example), the client address and mapper version in
 | Minimal web app to start from | `starter/dotnet/Efl.Web/Program.cs`, `Efl.Web.csproj`, `wwwroot/index.html` | `Guarded`, `FindHierarchy`, target `StageModeler` |
 | Web app test that starts the built app | `starter/web/tools/verify-webapp.mjs` | `build`, `server`, `check` |
 | Load helper against null `CAEXFile` | `starter/dotnet/Efl.Conversion/EflDocuments.cs` | `Load` |
-| Complete single-process web app (endpoints, limits, errors) | AMLPetriNet: `dotnet/PtMapper.Web/Program.cs` | `MapPost`/`MapGet` endpoints, `AddRateLimiter`, `Guarded` |
+| Complete single-process web app (endpoints, limits, errors) | AMLPetriNet: `dotnet/PtMapper.Web/Program.cs` | `MapPost`/`MapGet` endpoints, `AddRateLimiter`, `ClientAddress`, `Guarded` |
 | Bundle staging, 32-bit note | AMLPetriNet: `dotnet/PtMapper.Web/PtMapper.Web.csproj` | `StageWebAssets`, `PlatformTarget` |
 | Page: open, update, validate, SVG, download, concurrency | AMLPetriNet: `dotnet/PtMapper.Web/wwwroot/index.html` | `openAml`, `saveAml`, `validate`, `saveSvg`, `download`, `working` |
 | Browser test of the page, local or live | AMLPetriNet: `web/tools/verify-webapp.mjs` | `base`, `saves` |
@@ -632,9 +655,9 @@ starter serves only a `.json` example), the client address and mapper version in
 | SVG export shared by plugin and page | AMLPetriNet: `web/src/svg.js` | `exportSvg` |
 | Single-file bundle build, no CDN | AMLPetriNet: `web/build.mjs` | header comment |
 | CI building bundle then solution including the web project | AMLPetriNet: `.github/workflows/ci.yml` | steps "Build the modeler bundle", "Build" |
-| Endpoint table, limits, run instructions | AMLPetriNet: `README.md` | section "Web application" |
+| Endpoint table, limits, proxy key, run instructions | AMLPetriNet: `README.md` | section "Web application" |
 | Separate .NET API with CORS and warnings header | fpb-aml-mapper: `dotnet/FpbMapper.Web/Program.cs` | `AddCors`, `WithExposedHeaders` |
-| Node reverse proxy: body limit, rate limit, API route whitelist, copied warnings header | fpb-aml-mapper: `server.js` | `MAX_BODY_BYTES`, `rateLimit`, `app.post('/api/:direction', ...)` |
+| Node reverse proxy: body limit, rate limit, API route whitelist, copied warnings header, whole-app pass-through under `/pt` | fpb-aml-mapper: `server.js` | `MAX_BODY_BYTES`, `rateLimit`, `app.post('/api/:direction', ...)`, `app.use('/pt', ...)`, `PT_PROXY_KEY` |
 | Converter page with absolute API path and immediate revoke | fpb-aml-mapper: `public/index.html` | `convert`, `downloadOutput` |
 | Publish and zip deploy commands | fpb-aml-mapper: `README.md` | section "Deploy to Azure" |
 | Plugin referencing mapper and bundle | AMLFPB.js: `Aml.Editor.Plugin.FPB/Aml.Editor.Plugin.FPB.csproj` | `ProjectReference`, `FpbJsDistDir`, `VerifyFpbJsDist` |

@@ -305,9 +305,10 @@ externally authored files often fill only one direction (section 9).
    token or credentials: the `Path` is written into every document the mapper produces and reaches
    everyone who opens one. fpb-aml-mapper (`dotnet/FpbMapper.Conversion/FpbMappings.cs`, `AmlBase.Path`) and
    the starter (`starter/dotnet/Efl.Conversion/EflLibraries.cs`, `BasePath`) write the file name.
-   AMLPetriNet wrote a share URL with an embedded access token for a while and now writes the file
-   name too (`AMLPetriNet: dotnet/PtMapper.Conversion/PtNames.cs`, `AmlBase.Path`, whose comment gives
-   the reason). The AML Editor loads no referenced document in any form and takes the base libraries
+   AMLPetriNet writes the file name too, and the comment on its path gives the reason: a share link
+   with an access token in it would travel with every file (`AMLPetriNet: dotnet/PtMapper.Conversion/PtNames.cs`,
+   `AmlBase.Path`). The published FPD library file references the base libraries by file name as well
+   (`fpb-aml-mapper: public/VDI_FPD_DomainLibrary_v0.7.aml`, the `ExternalReference`). The AML Editor loads no referenced document in any form and takes the base libraries
    from its library manager, so a URL buys nothing there.
 2. Carry your own library and the two small shared libraries (OMG_DD, ObjectReferences) inside any
    document a person will open. The AML Editor does not follow file references: a document saved away
@@ -543,20 +544,23 @@ round trip stable in both cases.
   bend points for a self loop; flows that already have waypoints keep them
   (`starter/dotnet/Efl.Conversion/EflLayout.cs`, `RouteFlows`). Those bend points are written as
   `Waypoint_n` like any drawn route. See [08 Layout](08-layout.md) §4.5.
-- Missing layout is arranged in one place, never invented in two. A layout-free AML (hand-authored
-  engineering data) would abort the whole FPB.JS import, because the importer dereferences a
-  connection visual unconditionally (FPB.JS: `app/fpb/importer/JSONImporter.js`,
-  `buildSystemLimitFlow`). fpb-aml-mapper therefore emits a straight line between shape centres for
-  every connection without stored points, with the same `original` substructure as port-derived
-  points so that the echo cycle stays idempotent (fpb-aml-mapper:
-  `dotnet/FpbMapper.Conversion/CaexToFpbJson.cs`, `ParseProcess`, `FallbackWaypoints`; test
-  `Convert_WithoutAnyLayout_StillEmitsTwoWaypointsPerConnection` in
-  `dotnet/FpbMapper.Tests/WaypointFallbackTests.cs`), and writes default bounds 100,100,600,400 for a
-  system limit without visual data (`FpbJsonToCaex.cs`, `AddElement`, `BuildProcess`). That keeps the
-  canvas from staying empty, but the invented geometry looks like drawn geometry: nothing arranges
-  it, and the next sync stores it in the document. Recommendation: decide whether the modeler or the
-  mapper arranges missing layout, as AMLPetriNet's mapper does with `PtLayout`, and let the other
-  side pass the gap through untouched.
+- Missing layout is arranged in one place, never invented in two. The two source tool chains chose
+  different places. AMLPetriNet's mapper arranges with `PtLayout`. In the FPD chain the modeler
+  arranges: FPB.JS lays out whatever lacks visual information before its importer builds shapes
+  (FPB.JS: `app/fpb/importer/JSONImporter.js`, `needsLayout` and `layoutImportData` in the
+  `IMPORT_EVENTS.IMPORT_REQUEST` handler; `app/fpb/layout/AutoLayout.js`), and fpb-aml-mapper emits
+  only the layout the AML stores: a link without `PortCoordinate` or `Waypoint_n` gets no visual
+  entry, and an element without visual data, the system limit included, gets no `ViewInformation`
+  (fpb-aml-mapper: `dotnet/FpbMapper.Conversion/CaexToFpbJson.cs`, `ParseProcess`;
+  `FpbJsonToCaex.cs`, comments in `AddElement` and `BuildProcess`; tests
+  `Convert_WithoutConnectionLayout_ConnectionsGetNoVisual_ShapesKeepTheirs` and
+  `Convert_WithoutAnyLayout_EmitsNoVisualInformationButAllData` in
+  `dotnet/FpbMapper.Tests/LayoutFreeConversionTests.cs`). The mapper once did the opposite: straight
+  centre lines for links and default bounds 100,100,600,400 for a system limit, because the importer
+  aborted on a connection without visual entry. That kept the canvas from staying empty, but the
+  invented geometry looked like drawn geometry, nothing arranged it, and the next sync stored it in
+  the document (from the project history). Recommendation: decide whether the modeler or the mapper
+  arranges missing layout, and let the other side pass the gap through untouched.
 - Default bounds for a new container: an empty diagram created in an existing document still gets a
   default system limit box, because there is nothing to arrange yet
   (fpb-aml-mapper: `dotnet/FpbMapper.Conversion/FpbJsonToCaex.cs`, `CreateEmptyFpdInstanceHierarchy`).
