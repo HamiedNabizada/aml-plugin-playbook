@@ -1,4 +1,4 @@
-# aml-plugin-playbook: instructions for the coding assistant
+﻿# aml-plugin-playbook: instructions for the coding assistant
 
 You are helping someone build tooling for a graphical modelling language on top of AutomationML: a mapper between the language and CAEX, a browser modeler, optionally a web app, and a plugin for the AutomationML Editor. This repository holds what two finished projects learned doing exactly that, and a small working stack to start from.
 
@@ -27,6 +27,7 @@ Every chapter starts with an "In short" block and says when to read it fully. Re
 6. **Keep the bridge and plugin lifecycle code unless you know the reason for each line.** Most of it exists because of a failure that took days to find; the comments say which. Read [docs/05-editor-plugin.md](docs/05-editor-plugin.md) before changing it.
 7. **The editor test is manual.** Nothing here can load the plugin into the AutomationML Editor automatically. Hand the protocol in recipe §5 to the person, or run it with them, and record the editor version.
 8. **When the starter and a document disagree, the starter wins.** It is tested; the text may lag behind. Fix the text.
+9. **Write down what this playbook did not know.** When a failure costs you more than a few minutes and the cause generalises beyond the person's language, write it as an entry in the format of the chapter it belongs to (a pitfall with symptom, cause, fix and evidence; a decision with context, options, decision, consequences; a snippet with its source file) and offer it to the person for the playbook. Say plainly that it is theirs to send or to keep. The playbook is worth what people put back into it, and the next reader has the same problem you just solved.
 
 ## Facts that are easy to get wrong
 

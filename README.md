@@ -51,6 +51,27 @@ Shared AutomationML libraries:
 
 .NET 8, Node 20, Aml.Engine 4.x, Aml.Editor.Plugin.Contract 4.3.0, Aml.Editor.API 2.3.0, Microsoft.Web.WebView2 1.0.2903.40, diagram-js 15.26.0, diagram-js-direct-editing 3.5.1. The plugin is built for the AutomationML Editor 6.4 or later.
 
+## Send your findings back
+
+Everything in here was paid for once, by someone losing a day to it. If you build on this and hit
+something the playbook did not know, an entry from you saves the next reader that day.
+
+Useful in order of value:
+
+- **A pitfall** in the format of [docs/09-pitfalls.md](docs/09-pitfalls.md): symptom as a user sees
+  it, the cause you actually verified, the fix, and the file and symbol that prove it. A symptom
+  without a cause is still worth sending, marked as open.
+- **A decision** in the format of [docs/decisions.md](docs/decisions.md), especially when you chose
+  differently than this repository and it worked.
+- **A version** of the editor, Aml.Engine or the plugin contract that changed behaviour, with what
+  broke.
+
+Open an issue or a pull request. Rough notes are fine; the format matters less than the evidence.
+
+If you work with a coding assistant, tell it that this repository takes contributions, and that it
+should write down what it had to find out the hard way instead of only fixing your build. That is
+rule 9 in [CLAUDE.md](CLAUDE.md), and it is the reason the chapters here are as specific as they are.
+
 ## License
 
 MIT, see [LICENSE](LICENSE).
