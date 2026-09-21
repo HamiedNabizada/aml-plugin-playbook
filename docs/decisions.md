@@ -1,4 +1,4 @@
-# Decision history
+﻿# Decision history
 
 ## In short
 
@@ -843,6 +843,24 @@ This file complements the chapters: the chapters say what to do, this file says 
 - **Status:** in force (starter).
 
 ---
+
+### D-91 A third-party converter is vendored with numbered patches
+
+- **Context:** The mapping of OPC UA NodeSets to CAEX is defined in OPC 10000-83 Annex A, and the OPC Foundation publishes a converter for it (Opc2Aml). It is the normative path, and it has defects that hit real models: a reference into a placeholder crashed it, a BrowseName with an underscore silently lost the ends of every state machine, and the container it wrote could not be produced inside the AutomationML Editor at all.
+- **Options:** (a) reimplement the mapping, (b) reference the converter as a package or submodule and work around its defects, (c) vendor its source into `third_party/`, change it, and keep every change as a numbered patch file beside it.
+- **Decision:** (c). The source sits in `third_party/<tool>/`, every change is a file `third_party/patches/NNNN-<what>.patch`, and `UPSTREAM.md` holds one row per patch with the symptom, the cause, the measurement that shows it matters and the commit the vendored copy came from. `THIRD-PARTY-NOTICES.md` names the component, its version, its licence and its copyright, separately for source code and for data files that ship in the package.
+- **Consequences:** An update from upstream means re-applying ten patches, which is the price for being able to fix a normative converter at all. In exchange every change is explainable to the upstream project, and each patch can be offered back as it is. Do not edit the vendored source without writing the patch file in the same commit, or the next update loses the change.
+- **Evidence:** `AMLOpcUa: third_party/Opc2Aml/UPSTREAM.md` (the patch table); `AMLOpcUa: third_party/patches/` (0001 to 0010); `AMLOpcUa: THIRD-PARTY-NOTICES.md` (source code and data files in separate tables).
+- **Status:** in force.
+
+### D-92 A plugin uses only the part of the host's libraries it can rely on
+
+- **Context:** The plugin compiles against the Aml.Engine of its NuGet reference; at runtime the AutomationML Editor loads its own copy. Everything worked in the tests and on the command line, and inside the editor every conversion failed with a `MissingMethodException` on `AutomationMLContainer.AddRoot`. A private copy of Aml.Engine is not an option, because `CAEXDocument` crosses the boundary between editor and plugin.
+- **Options:** (a) ship a private Aml.Engine, (b) call the method by reflection and fall back, (c) stay on the part of the API the editor is known to carry.
+- **Decision:** (c). The conversion writes a plain `.aml` file with `CAEXDocument.SaveToFile` and reads it back, instead of an `.amlx` container. Nothing in the tool needed the packaging.
+- **Consequences:** Anything beyond the plain document API has to be proven inside the editor before a release, not only in tests. A test suite that is green says nothing about the host's version of a shared library.
+- **Evidence:** `AMLOpcUa: third_party/patches/0010-plain-aml-instead-of-container.patch`; `AMLOpcUa: dotnet/OpcUaAml.Core/Import/NodeSetImporter.cs` (`ReadDocument`); see PF-AML-17 in [09 Pitfalls](09-pitfalls.md).
+- **Status:** in force.
 
 ## Checklist
 

@@ -1,4 +1,4 @@
-# 09 Pitfalls catalogue
+﻿# 09 Pitfalls catalogue
 
 **In short**
 
@@ -222,6 +222,68 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   `starter/dotnet/Efl.Tests/DiagramInterchangeTests.cs` (`TheEmbeddedLibraryIsThePublishedFile`).
 
 ---
+
+#### PF-AML-17 A method the editor's Aml.Engine does not have
+- **Symptom:** every test and every command line run works; inside the editor the same code
+  dies at once with `MissingMethodException: 'System.IO.Packaging.PackagePart
+  Aml.Engine.AmlObjects.AutomationMLContainer.AddRoot(System.IO.Stream, System.Uri)'`. No
+  NodeSet could be imported from the plugin at all.
+- **Cause:** the plugin compiles against the Aml.Engine of its NuGet reference, but at runtime
+  the editor's own Aml.Engine is loaded, and there the signature differs. Shipping a private
+  copy is not an option either: `CAEXDocument` crosses the boundary between editor and plugin,
+  so a second Aml.Engine would make the types incompatible.
+- **Fix:** stay on the part of Aml.Engine the editor is known to carry, and prefer the plain
+  document API. Concretely: a plugin should not write `.amlx` containers; write `.aml` with
+  `CAEXDocument.SaveToFile` and read it back. Anything exotic belongs behind a check that runs
+  in the editor, not only in tests.
+- **Evidence:** AMLOpcUa: third_party/patches/0010-plain-aml-instead-of-container.patch;
+  AMLOpcUa: dotnet/OpcUaAml.Core/Import/NodeSetImporter.cs (`ReadDocument`, `Convert`).
+
+#### PF-AML-18 The import downgrades the document's base libraries
+- **Symptom:** after importing generated libraries the editor's status bar says "Some of the
+  libraries cannot be verified as valid" and `AutomationMLInterfaceClassLib` carries a red
+  marker in the tree.
+- **Cause:** the generated libraries bring their own copy of the AutomationML base libraries
+  (version 2.10.0 in the converter's output) and are written into a document that already
+  referenced the base libraries externally, in a newer version (2.11.0). The document then
+  holds two versions of the same library.
+- **Fix:** before adding, look for the base libraries in the document, both inline and as an
+  `ExternalReference`, and keep the version that is already there. When neither is present,
+  add the newest one the tool carries.
+- **Status:** open in AMLOpcUa (found 2026-09-21); the demo document was repaired by replacing
+  the three libraries with the 2.11.0 versions.
+- **Evidence:** AMLOpcUa: dotnet/OpcUaAml.Core/Import/LibraryMerger.cs (where the check belongs).
+
+#### PF-AML-19 Inserting many elements into the open document takes minutes
+- **Symptom:** an import that takes 3 s on the command line runs for minutes inside the editor
+  at full processor load, with nothing in the log; users close the window and try again.
+- **Cause:** not fully established. The difference is the open document: every change to it is
+  observed by the editor's tree, validation and undo, and the import inserts tens of thousands
+  of elements one by one (15 libraries, about 37 MB of CAEX).
+- **Fix:** build the result in a detached `CAEXDocument` and insert it into the open one in as
+  few steps as possible; keep the conversion itself off the open document; show a busy state
+  with a count while it runs, so the user sees progress instead of silence.
+- **Status:** open in AMLOpcUa (measured 2026-09-21: `uaaml nodeset --into` 3.6 s against the
+  same files, the plugin more than four minutes).
+- **Evidence:** AMLOpcUa: Aml.Editor.Plugin.OpcUa/OpcUaPlugin.Server.cs (`ServerTypesButton_Click`,
+  `ImportFileAsync`).
+
+#### PF-AML-20 An instance loses what the supertype declared
+- **Symptom:** an instance created from a type is missing children that a supertype's
+  declaration held; nothing reports it, and the instance is silently incomplete.
+- **Cause:** `CreateClassInstance` flattens the class hierarchy by replacing a declaration of
+  the same name with everything below it. A type system that only replaces the node, and keeps
+  the hierarchy under it, means something different by the same word. OPC UA is such a system
+  (the fully inherited instance declaration hierarchy of OPC 10000-3), and so are most type
+  systems with nested declarations.
+- **Fix:** after the flattening, walk the class chain yourself: for every declaration that
+  overrides another, copy in the children of the overridden one that the new one does not have,
+  together with the links that attach them, and do the same one level further down.
+- **Evidence:** AMLOpcUa: dotnet/OpcUaAml.Core/Types/TypeInstantiator.cs (`MergeInherited`,
+  `CopyWithLinks`); AMLOpcUa: dotnet/OpcUaAml.Tests/InstanceTests.cs
+  (`An_overridden_declaration_keeps_what_it_inherits`,
+  `Every_link_of_an_instance_ends_inside_it`). Measured over the released OPC UA companion
+  specifications: 191 of 422 overriding declarations have children of their own.
 
 ## 2. Ids
 
@@ -673,6 +735,26 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 
 ---
 
+#### PF-FMT-20 A boolean written as 1 or 0 is read as its opposite
+- **Symptom:** an abstract type becomes instantiable, an optional field mandatory, a reference
+  points the other way. Only files from other tools are affected.
+- **Cause:** the XML Schema lexical space of `xs:boolean` is `true`, `false`, `1` and `0`. A
+  reader that compares against `"true"` turns `1` into false.
+- **Fix:** one helper for the whole reader that accepts all four spellings, and a test with a
+  file that uses `1` and `0`.
+- **Evidence:** NodeSet.js: src/nodeset/reader.ts (`isTrue`); NodeSet.js:
+  tests/unit/fidelity.test.ts.
+
+#### PF-FMT-21 A round trip loses what the tool does not understand
+- **Symptom:** a file written after a read is smaller than the original; values, definitions or
+  vendor extensions are gone. The tool that wrote it never notices.
+- **Fix:** keep every attribute and every element the model does not map as raw XML on the node
+  it belongs to, and write it back in place. Prove it with a round trip over real files from
+  the wild, node by node, not with a hand-written example.
+- **Evidence:** NodeSet.js: src/nodeset/reader.ts (`otherAttributes`, `otherElements`),
+  src/nodeset/writer.ts; NodeSet.js: tests/unit/fidelity.test.ts (37 files read and written
+  back without a difference).
+
 ## 5. diagram-js modeler
 
 #### PF-DJS-01 Dragging a connection end changes the drawing but not the model
@@ -852,6 +934,20 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Evidence:** `starter/web/src/io/json.js` (`importModel`, `exportModel`).
 
 ---
+
+#### PF-DJS-20 Of two edges between the same pair only one is visible
+- **Symptom:** a state machine with six transitions shows four arrows; two labels are missing,
+  and the way there and the way back lie on one line.
+- **Cause:** the bow that separates parallel edges is computed with each edge's own
+  perpendicular. For the opposite direction that vector flips, so a symmetric offset produces
+  the same curve twice, and the second label lands on the first.
+- **Fix:** compute the offset in one canonical direction for the pair (order the two ends and
+  negate for the way back), and put the labels at different points along the curve, not only
+  beside it.
+- **Evidence:** AMLOpcUa: dotnet/OpcUaAml.Core/Diagram/StateChart.cs (`Pair`, `Perpendicular`,
+  `Bezier`); NodeSet.js: src/nodeset/statemachine.ts (`stateChartSvg`); tests:
+  AMLOpcUa dotnet/OpcUaAml.Tests/StateMachineTests.cs
+  (`Two_transitions_between_the_same_states_are_drawn_apart`).
 
 ## 6. WebView2 and bridge
 
@@ -1206,6 +1302,31 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 
 ---
 
+#### PF-CCH-05 A warm cache does not help the plugin
+- **Symptom:** a conversion cached by a command line run is converted again inside the plugin,
+  every time, although the input files are identical.
+- **Cause:** the cache key includes the build of the converter
+  (`Assembly.ManifestModule.ModuleVersionId`), which differs between the Debug build the tool
+  uses and the Release build inside the plugin. Two builds never share an entry, which is
+  correct but surprising.
+- **Fix:** know it before measuring. Warm a cache with the same build that will read it, and
+  say in the documentation that the first conversion after every build is a cold one.
+- **Evidence:** AMLOpcUa: dotnet/OpcUaAml.Core/Import/ConversionCache.cs (`Key`); measured
+  2026-09-21: 19 s cold, 4 s warm, for the same files.
+
+#### PF-CCH-06 The editor offers no update after a rebuild
+- **Symptom:** the plugin was rebuilt, the PlugIn Manager shows no update, and the editor keeps
+  running the old code; a bug that was just fixed is still there.
+- **Cause:** the manager compares version numbers only. A rebuild under the same version is
+  invisible to it.
+- **Fix:** for anything a user installs, raise the version. For a developer round trip, copy
+  the files of the package into the installed folder
+  (`%APPDATA%\AutomationMLEditor\PlugIns6\<package>.<version>\lib\<tfm>\`), renaming files
+  the running editor locks to `.old`, and restart the editor. Never copy the whole build
+  output, only the files the package holds.
+- **Evidence:** AMLOpcUa (session of 2026-09-21); the mechanics are described in
+  docs/05-editor-plugin.md.
+
 ## 9. Layout
 
 #### PF-LAY-01 Files without layout produce an empty canvas
@@ -1449,6 +1570,28 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   `starter/.gitattributes` (the `*.aml -text` rule).
 
 ---
+
+#### PF-TST-11 A rule set that was never measured cries wolf
+- **Symptom:** the model checks are green on the examples and produce thousands of findings on
+  real files, so users switch them off.
+- **Cause:** rules written against one hand-made example encode that example, not the format.
+- **Fix:** run the rules over a corpus of published files, count the findings per rule, and
+  narrow every rule until what is left is genuine. Keep the numbers in the documentation, they
+  are the evidence that the rules mean something.
+- **Evidence:** NodeSet.js: src/nodeset/checks.ts; measured over 24 released OPC UA companion
+  specifications: about 2250 findings before the pass, 811 after the first narrowing, 165 on
+  the base model in the end, each of the remaining ones traced to a real defect in the file.
+
+#### PF-TST-12 A browser library cannot be tested or scripted
+- **Symptom:** `require()` of the built library in Node dies on `document`; nothing about the
+  model can be tested or generated without a browser.
+- **Cause:** the library build carries the canvas, the UI framework and a stylesheet, although
+  everything worth scripting sits below them.
+- **Fix:** a second entry point that exports the model layer alone, built without the DOM
+  parts, and a check that loads the built file in Node so the dependency cannot creep back in
+  through one careless import.
+- **Evidence:** NodeSet.js: src/core.ts, webpack.lib.config.js, scripts/verify-core.cjs
+  (`npm run verify:core`).
 
 ## 11. Build and bundling
 
@@ -1736,6 +1879,13 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 | Echo baseline, live sync, update dialogs, backups | AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs | `OnDiagramChangedFromJs`, `LiveSyncTick`, `ComputeIhHash`, `UpdateButton_Click`, `TryWritePendingBackup` |
 | Cycle-breaking export, hidden-tab import flag | AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html | `sanitiseReplacer`, `safeSnapshot`, `settle` |
 | Reflection save and its limits | AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/EditorSaver.cs | `TrySaveActiveDocument`, `CandidateProperties` |
+| Vendored converter with numbered patches | AMLOpcUa: third_party/Opc2Aml/UPSTREAM.md, third_party/patches/ | the patch table, `0001` to `0010` |
+| Instantiating a type the way the source language does | AMLOpcUa: dotnet/OpcUaAml.Core/Types/TypeInstantiator.cs | `Instantiate`, `MergeInherited`, `CopyWithLinks`, `Prune` |
+| Conversion cache and its key | AMLOpcUa: dotnet/OpcUaAml.Core/Import/ConversionCache.cs | `Key`, `Find`, `Store`, `Trim` |
+| Reading and writing an exchange format without loss | NodeSet.js: src/nodeset/reader.ts, src/nodeset/writer.ts | `isTrue`, `otherAttributes`, `otherElements` |
+| A model layer without the DOM, for scripts and tests | NodeSet.js: src/core.ts, scripts/verify-core.cjs | the second entry point, `npm run verify:core` |
+| Rules measured against published files | NodeSet.js: src/nodeset/checks.ts | `check`, the rule ids `M001` to `M023` |
+| Drawing two edges between the same pair apart | AMLOpcUa: dotnet/OpcUaAml.Core/Diagram/StateChart.cs | `Svg`, `Pair`, `Perpendicular`, `Bezier` |
 | API drift detection, contract snapshot | AMLFPB.js: Aml.Editor.Plugin.FPB.Tests/ApiContractTests.cs | `ApiContractTests` |
 | API drift detection, startup check | AMLFPB.js: Aml.Editor.Plugin.FPB/Diagnostics/ApiCompatCheck.cs | `ApiCompatCheck.Run` |
 | Sibling-layout CI | AMLFPB.js: .github/workflows/build.yml | steps "Checkout plugin" to "Checkout OCL.NET" |

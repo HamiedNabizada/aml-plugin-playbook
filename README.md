@@ -1,4 +1,4 @@
-# aml-plugin-playbook
+﻿# aml-plugin-playbook
 
 Everything needed to build tooling for your own graphical modelling language on top of AutomationML: a mapper between the language and CAEX, a browser modeler based on diagram-js, a web app, and a plugin for the AutomationML Editor that edits diagrams inside AML documents.
 
@@ -37,6 +37,7 @@ The playbook distils two projects that map graphical languages to AutomationML a
 |---|---|---|
 | AMLFPB.js ([hsu-aut/AMLFPB.js](https://github.com/hsu-aut/AMLFPB.js)) with [hsu-aut/fpb-aml-mapper](https://github.com/hsu-aut/fpb-aml-mapper) and the FPB.JS modeler ([FPB.JS](https://github.com/HamiedNabizada/FPB.JS)) | Formalised Process Description, VDI/VDE 3682 | Plugin, mapper, web app, OCL based validation |
 | AMLPetriNet ([hsu-aut/AMLPetriNet](https://github.com/hsu-aut/AMLPetriNet)) | Place/transition Petri nets, ISO/IEC 15909, PNML exchange | Plugin, mapper, CLI, web app, PNML conformance checks |
+| AMLOpcUa ([hsu-aut/AMLOpcUa](https://github.com/hsu-aut/AMLOpcUa)) with the NodeSet.js modeller ([HamiedNabizada/NodeSet.js](https://github.com/HamiedNabizada/NodeSet.js)) | OPC UA information models, OPC 10000-83 Annex A, NodeSet2 exchange | Plugin, importer and exporter, CLI, servers, model rules, a vendored third-party converter |
 
 The library design follows the three-phase method for representing graphical description languages in AutomationML: analysis of the language (A1 to A4), a semantic domain model (P1 to P3) and instantiation conventions (P4 to P8). It was introduced with the FPD (Drath, Nabizada, Fay, EKA 2026), the FPD domain library is described in Nabizada, Drath, Gehlhoff, Fay (ETFA 2026), and its application to a second language with a cross-language comparison is in Nabizada, Drath, Ocker, Fay (at Automatisierungstechnik, submitted). Cross-diagram references use the multi-context reference framework of Drath and Nabizada (ETFA 2026).
 
