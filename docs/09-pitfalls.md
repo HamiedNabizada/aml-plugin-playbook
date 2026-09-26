@@ -949,6 +949,31 @@ evidence of what goes wrong otherwise. The main lines of advice are in
   AMLOpcUa dotnet/OpcUaAml.Tests/StateMachineTests.cs
   (`Two_transitions_between_the_same_states_are_drawn_apart`).
 
+#### PF-DJS-21 A hook after an early return blanks the whole page
+- **Symptom:** selecting one kind of element after another turns the page white; whatever was
+  not saved is gone.
+- **Cause:** a panel section returned early for elements it does not edit and called a React
+  hook after that return, so React rendered fewer hooks than before and threw. Without an error
+  boundary React unmounts the whole root on such an error.
+- **Fix:** hooks before every return, checked at build time by `eslint-plugin-react-hooks`
+  (`rules-of-hooks`); an error boundary around each part of the interface, and the open model
+  in a ref outside the React tree, so that a failure can still be saved from and the modeler can
+  start again with the same model.
+- **Evidence:** NodeSet.js: src/ui/Sections.tsx (`FieldsSection`), eslint.config.mjs,
+  src/ui/Guard.tsx (`Guard`), src/ui/App.tsx (`App`, `Kept`, `Inbox`); tests:
+  NodeSet.js tests/unit/node-editor.test.tsx, tests/e2e/modeler.spec.ts.
+
+#### PF-DJS-22 Undo by snapshots grows until the tab gives up
+- **Symptom:** a long session on a large model gets slower and the browser tab finally crashes.
+- **Cause:** every undo step kept a copy of the whole file, with no limit: 1.5 MB a step for a
+  model of 790 nodes, 23 MB for one of 9624.
+- **Fix:** measure what a step costs and bound the number of steps by the size of the model
+  (here at most 100 steps and about 200 000 copied nodes, never fewer than 10); never trim
+  while a batch is open, or the batch is taken back at the wrong place. Recording only what a
+  step changed is the lasting fix.
+- **Evidence:** NodeSet.js: src/nodeset/edit.ts (`undoLimit`, `ModelEditor.remember`,
+  `ModelEditor.batch`); tests: NodeSet.js tests/unit/undo.test.ts.
+
 ## 6. WebView2 and bridge
 
 #### PF-WV-01 The first model push never arrives
@@ -1593,6 +1618,17 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Evidence:** NodeSet.js: src/core.ts, webpack.lib.config.js, scripts/verify-core.cjs
   (`npm run verify:core`).
 
+#### PF-TST-13 Unit tests never reach the interface
+- **Symptom:** a hundred unit tests are green, and clicking through a released model crashes
+  the page on two types of sixty.
+- **Cause:** the unit tests cover the model layer; nothing drove the interface with real files.
+- **Fix:** end-to-end tests in a real browser over a corpus of released files, taken from their
+  repository at a fixed commit with a sparse checkout: open each with what it requires, select
+  every element once, make one edit, undo it, save, and fail on any error the page logs. A
+  stand-in for the host (here `chrome.webview`) tests the embedded mode the same way.
+- **Evidence:** NodeSet.js: tests/e2e/corpus.spec.ts, tests/e2e/corpus.ts (`Corpus.required`),
+  tests/e2e/corpus-folders.txt, tests/e2e/host.spec.ts, .github/workflows/ci.yml (job `e2e`).
+
 ## 11. Build and bundling
 
 #### PF-BLD-01 The library thinks it runs outside a browser
@@ -1707,6 +1743,17 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - **Fix:** follow the npm trusted publishing documentation exactly and test with a pre-release tag.
 - **Evidence:** FPB.JS: .github/workflows/release.yml (`permissions` with `id-token: write`, and
   `registry-url` in the `actions/setup-node` step); the four fix commits are in the project history.
+
+#### PF-CI-07 The released package lacks a part the local build has
+- **Symptom:** the first public release installs, but one tab of the plugin stays empty.
+- **Cause:** CI built the plugin without the web bundle of a sibling repository (a switch meant
+  for quick checks), and the release job published what CI built, replacing the package that
+  had been checked locally. Nobody looked at the file that was actually published.
+- **Fix:** build the sibling at a pinned release in CI, refuse a package that lacks any part it
+  must carry (and one that carries the host's contract assembly), and after every release
+  download the published asset and check it, not the local build.
+- **Evidence:** AMLOpcUa: .github/workflows/ci.yml (`NODESET_JS_REF`, steps "Build the modeler"
+  and "Check the package"); the release without the modeler is v0.1.0 in the project history.
 
 ---
 
@@ -1849,6 +1896,13 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 - [ ] Example files written with a fixed timestamp and checked by CI with `git diff` (PF-TST-10).
 - [ ] CI replicates sibling layout, runs on every push, builds the web bundle before .NET (PF-CI-01,
       PF-CI-02, PF-CI-05).
+- [ ] The published release asset is downloaded and checked after every release; CI refuses a
+      package that lacks a required part (PF-CI-07).
+- [ ] Hooks before every return, `rules-of-hooks` in CI, an error boundary per part of the
+      interface, the open model outside the React tree (PF-DJS-21).
+- [ ] Undo steps bounded by what they cost (PF-DJS-22).
+- [ ] End-to-end tests over released files at a fixed commit, every element selected once
+      (PF-TST-13).
 - [ ] Web app: forwarded headers, API-only rate limit, MIME types for your file extensions, assets
       copied into a cleaned folder in `wwwroot`, HSTS outside development only (PF-DEP-03 to PF-DEP-07).
 
@@ -1877,6 +1931,8 @@ evidence of what goes wrong otherwise. The main lines of advice are in
 | Web app hardening | AMLPetriNet: dotnet/PtMapper.Web/Program.cs | `ApiPolicy`, `UseForwardedHeaders`, `FileExtensionContentTypeProvider`, `UseHsts` |
 | Rebuild race token, document callbacks, cache keys | AMLFPB.js: Aml.Editor.Plugin.FPB/FpbPlugin.xaml.cs | `_rebuildGeneration`, `RebuildTabsForDocumentInner`, `DocumentLoaded`, `DocumentUnLoaded`, `_pendingCache`, `OriginIdOf` |
 | Echo baseline, live sync, update dialogs, backups | AMLFPB.js: Aml.Editor.Plugin.FPB/Views/IhView.xaml.cs | `OnDiagramChangedFromJs`, `LiveSyncTick`, `ComputeIhHash`, `UpdateButton_Click`, `TryWritePendingBackup` |
+| Error boundaries, the model outside the React tree, unsaved work in IndexedDB | NodeSet.js: src/ui/Guard.tsx, src/ui/App.tsx, src/ui/backup.ts | `Guard`, `App`, `Kept`, `Inbox`, `Backup` |
+| Package check of a plugin that bundles a sibling's web build | AMLOpcUa: .github/workflows/ci.yml | `NODESET_JS_REF`, "Build the modeler", "Check the package" |
 | Cycle-breaking export, hidden-tab import flag | AMLFPB.js: Aml.Editor.Plugin.FPB/fpbjs-assets/index.html | `sanitiseReplacer`, `safeSnapshot`, `settle` |
 | Reflection save and its limits | AMLFPB.js: Aml.Editor.Plugin.FPB/Bridge/EditorSaver.cs | `TrySaveActiveDocument`, `CandidateProperties` |
 | Vendored converter with numbered patches | AMLOpcUa: third_party/Opc2Aml/UPSTREAM.md, third_party/patches/ | the patch table, `0001` to `0010` |
